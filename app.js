@@ -1041,6 +1041,61 @@ window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.compl
 window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek='';c.completedDate='';saveChores();renderChores()};
 window.editChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;$('choreId').value=c.id;$('choreName').value=c.name;populateAssigneeSelect('choreAssignee',c.assignee||'');$('choreDay').value=c.day;$('choreNotes').value=c.notes||'';$('choreDialogTitle').textContent='Edit Weekly Chore';$('choreDialog').showModal()};
 
+
+let calendarPanelOpen=false;
+let calendarCursor=new Date();
+calendarCursor.setDate(1);
+let selectedCalendarDate='';
+
+function isoLocal(d){
+ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+ return `${y}-${m}-${day}`;
+}
+function choreDateForWeek(c){
+ if(c.assignmentWeek!==mondayOfWeek())return '';
+ const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+ const di=days.indexOf(c.day); if(di<0)return '';
+ const d=new Date(c.assignmentWeek+'T12:00:00');d.setDate(d.getDate()+di);return isoLocal(d);
+}
+function calendarItemsForDate(dateStr){
+ const items=[];
+ tasks.filter(t=>!t.completed&&t.dueDate===dateStr).forEach(t=>items.push({type:'Maintenance',name:t.name,asset:t.asset,assignee:t.assignee||'',status:statusOf(t),id:t.id}));
+ chores.filter(c=>c.assignmentWeek===mondayOfWeek()&&choreDateForWeek(c)===dateStr).forEach(c=>items.push({type:'Chore',name:c.name,asset:'Weekly Chores',assignee:c.weekAssignee||'',status:choreDoneThisWeek(c)?'completed':'scheduled',id:c.id}));
+ return items;
+}
+function renderCalendarState(){
+ const body=$('calendarPanelBody'),btn=$('toggleCalendarPanel');
+ if(!body||!btn)return;
+ body.classList.toggle('hidden',!calendarPanelOpen);
+ btn.textContent=calendarPanelOpen?'Hide':'Show';
+ btn.setAttribute('aria-expanded',calendarPanelOpen?'true':'false');
+}
+function renderCalendar(){
+ renderCalendarState();
+ if(!calendarPanelOpen)return;
+ const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth();
+ $('calendarMonthLabel').textContent=calendarCursor.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+ const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());
+ let cells='',today=isoLocal(new Date());
+ for(let i=0;i<42;i++){
+   const d=new Date(start);d.setDate(start.getDate()+i);
+   const ds=isoLocal(d),items=calendarItemsForDate(ds);
+   const maint=items.some(x=>x.type==='Maintenance'),chore=items.some(x=>x.type==='Chore'),overdue=items.some(x=>x.status==='overdue');
+   cells+=`<button type="button" class="calendar-day ${d.getMonth()!==m?'other-month':''} ${ds===today?'today':''} ${ds===selectedCalendarDate?'selected':''}" onclick="selectCalendarDate('${ds}')"><span class="calendar-date-num">${d.getDate()}</span><span class="calendar-count">${items.length?`${items.length} item${items.length===1?'':'s'}`:''}</span><span class="calendar-dots">${overdue?'<span class="calendar-dot dot-overdue"></span>':''}${maint?'<span class="calendar-dot dot-maint"></span>':''}${chore?'<span class="calendar-dot dot-chore"></span>':''}</span></button>`;
+ }
+ $('calendarGrid').innerHTML=cells;
+ if(selectedCalendarDate)renderCalendarDayDetails(selectedCalendarDate);
+}
+window.selectCalendarDate=function(ds){
+ selectedCalendarDate=ds;
+ const d=new Date(ds+'T12:00:00');calendarCursor=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();
+};
+function renderCalendarDayDetails(ds){
+ const items=calendarItemsForDate(ds);
+ const label=new Date(ds+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+ $('calendarDayDetails').innerHTML=`<h3>${esc(label)}</h3>`+(items.length?items.map(i=>`<div class="calendar-detail-item"><strong>${esc(i.name)}</strong><div class="calendar-detail-meta">${esc(i.type)} · ${esc(i.asset)}${i.assignee?` · Assigned to ${esc(i.assignee)}`:''}</div></div>`).join(''):'<p class="muted">Nothing scheduled for this day.</p>');
+}
+
 let currentStatusFilter='all';
 function render(){
  renderAssets('vehicle','vehiclesList');renderAssets('power','powerList');renderAssets('home','homeList');
@@ -1054,6 +1109,8 @@ function render(){
  }
  $('peopleMiniList').innerHTML=PEOPLE.map(p=>`<button type="button" class="${prevAssignee===p?'active':''}" onclick="openPersonTasks('${esc(p)}')">${esc(p)}</button>`).join('');
  $('equipmentTotal').textContent=assets.length;
+ renderCalendarState();
+ if(calendarPanelOpen)renderCalendar();
  renderSeasonalPanelState();
  if(seasonalPanelOpen){renderSeasonal();}
  $('recentHistory').innerHTML=historyRows(null,8);
@@ -1236,5 +1293,11 @@ $('chorePersonFilter').onchange=renderChores;
 
 
 $('backDashboardBtn').onclick=()=>{currentPerson='';showMainView('maintenance')};
+
+
+$('toggleCalendarPanel').onclick=()=>{calendarPanelOpen=!calendarPanelOpen;renderCalendar();};
+$('prevMonthBtn').onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendar();};
+$('nextMonthBtn').onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderCalendar();};
+$('todayMonthBtn').onclick=()=>{calendarCursor=new Date();calendarCursor.setDate(1);selectedCalendarDate=isoLocal(new Date());renderCalendar();};
 
 render();

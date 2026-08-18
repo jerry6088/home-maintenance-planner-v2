@@ -57,6 +57,28 @@
 <p id="attentionEmpty" class="muted">Nothing overdue or due soon.</p>
 </section>
 
+<section class="dashboard-panel calendar-panel">
+<div class="section-title-row">
+  <div><small>SCHEDULE</small><h2>Calendar</h2></div>
+  <button id="toggleCalendarPanel" type="button" class="collapse-btn" aria-expanded="false">Show</button>
+</div>
+<div id="calendarPanelBody" class="calendar-panel-body hidden">
+  <div class="calendar-toolbar">
+    <button id="prevMonthBtn" type="button">←</button>
+    <button id="todayMonthBtn" type="button">Today</button>
+    <h3 id="calendarMonthLabel"></h3>
+    <button id="nextMonthBtn" type="button">→</button>
+  </div>
+  <div class="calendar-weekdays">
+    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+  </div>
+  <div id="calendarGrid" class="calendar-grid"></div>
+  <div id="calendarDayDetails" class="calendar-day-details">
+    <p class="muted">Click a date to see what is due.</p>
+  </div>
+</div>
+</section>
+
 <section class="dashboard-panel seasonal-panel">
 <div class="section-title-row">
   <div><small>HOME</small><h2>Seasonal Home Maintenance</h2></div>

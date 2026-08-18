@@ -174,3 +174,16 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 .assignment-row select{width:100%}
 .assignment-status{font-size:12px;font-weight:800;color:#2146d0}
 @media(max-width:760px){.assignment-row{grid-template-columns:1fr}.assignment-row select{width:100%}}
+
+.calendar-panel-body.hidden{display:none!important}.calendar-panel-body:not(.hidden){display:block!important}
+.calendar-toolbar{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;align-items:center;margin-bottom:12px}
+.calendar-toolbar h3{text-align:center;margin:0}.calendar-toolbar button{background:var(--royal-soft);color:var(--royal)}
+.calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.calendar-weekdays{margin-bottom:5px}.calendar-weekdays div{text-align:center;font-size:12px;font-weight:900;color:#68748a;padding:4px}
+.calendar-day{min-height:88px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.calendar-day:hover{border-color:var(--royal);box-shadow:0 2px 9px #2146d014}.calendar-day.other-month{opacity:.35}.calendar-day.today{outline:2px solid var(--royal)}.calendar-day.selected{background:var(--royal-soft);border-color:var(--royal)}
+.calendar-date-num{font-weight:900;font-size:13px}.calendar-dots{display:flex;gap:4px;flex-wrap:wrap;margin-top:auto}.calendar-dot{width:8px;height:8px;border-radius:50%}
+.dot-maint{background:#2146d0}.dot-chore{background:#3b8a5a}.dot-overdue{background:#c9453d}.calendar-count{font-size:11px;color:#68748a}
+.calendar-day-details{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}.calendar-detail-item{border:1px solid #e1e6ef;border-radius:9px;padding:10px;margin-bottom:7px}
+.calendar-detail-item strong{display:block}.calendar-detail-meta{font-size:12px;color:#68748a;margin-top:3px}
+@media(max-width:700px){.calendar-day{min-height:66px;padding:5px}.calendar-count{display:none}.calendar-toolbar{grid-template-columns:auto 1fr auto}.calendar-toolbar #todayMonthBtn{display:none}.calendar-toolbar h3{grid-column:2}}
