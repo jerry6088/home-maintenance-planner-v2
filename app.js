@@ -921,12 +921,13 @@ window.completeSeasonal=function(id){
 };
 function renderSeasonal(){
  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active',b.dataset.season===seasonalFilter));
- const list=seasonal.filter(x=>seasonalFilter==='All'||x.season===seasonalFilter);
- $('seasonalList').innerHTML=list.map(x=>`<article class="season-item ${seasonalDoneThisCycle(x)?'done':''}"><div><div class="season-name">${esc(x.name)}</div><div class="season-meta">${esc(x.season)}${x.lastDone?` · Last completed ${esc(x.lastDone)}`:''}</div><p>${esc(x.notes)}</p></div><div class="season-actions"><select onchange="assignSeasonal('${x.id}',this.value)"><option value="">Unassigned</option>${PEOPLE.map(p=>`<option value="${esc(p)}" ${x.assignee===p?'selected':''}>${esc(p)}</option>`).join('')}</select><button onclick="completeSeasonal('${x.id}')">${seasonalDoneThisCycle(x)?'✓ Completed':'✓ Complete'}</button></div></article>`).join('');
+ const showDone=$('showCompletedSeasonal')?.checked||false;
+ const list=seasonal.filter(x=>(seasonalFilter==='All'||x.season===seasonalFilter)&&(showDone||!seasonalDoneThisCycle(x)));
+ $('seasonalList').innerHTML=list.map(x=>`<article class="season-item ${seasonalDoneThisCycle(x)?'done':''}"><div><div class="season-name">${esc(x.name)}</div><div class="season-meta">${esc(x.season)}${x.lastDone?` · Last completed ${esc(x.lastDone)}`:''}</div><p>${esc(x.notes)}</p></div><div class="season-actions"><select onchange="assignSeasonal('${x.id}',this.value)"><option value="">Unassigned</option>${PEOPLE.map(p=>`<option value="${esc(p)}" ${x.assignee===p?'selected':''}>${esc(p)}</option>`).join('')}</select>${seasonalDoneThisCycle(x)?`<button class="undo-btn" onclick="undoSeasonalCompletion('${x.id}')">↶ Undo</button>`:`<button onclick="completeSeasonal('${x.id}')">✓ Complete</button>`}</div></article>`).join('');
 }
 function historyRows(assetName,limit){
  const rows=history.filter(h=>!assetName||h.asset===assetName).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,limit||999);
- return rows.length?rows.map(h=>`<div class="history-row"><strong>${esc(h.task||h.name||'Maintenance')}</strong><div class="history-meta">${esc(h.date||'')}${h.asset?` · ${esc(h.asset)}`:''}${h.assignee?` · Assigned: ${esc(h.assignee)}`:''}${h.meter!==''&&h.meter!=null?` · ${esc(String(h.meter))}${h.meterType?` ${esc(h.meterType)}`:''}`:''}${h.cost?` · $${Number(h.cost).toFixed(2)}`:''}</div>${h.notes?`<div>${esc(h.notes)}</div>`:''}</div>`).join(''):'<p class="muted">No completed maintenance recorded yet.</p>';
+ return rows.length?rows.map(h=>`<div class="history-row"><strong>${esc(h.task||h.name||'Maintenance')}</strong><div class="history-meta">${esc(h.date||'')}${h.asset?` · ${esc(h.asset)}`:''}${h.assignee?` · Assigned: ${esc(h.assignee)}`:''}${h.meter!==''&&h.meter!=null?` · ${esc(String(h.meter))}${h.meterType?` ${esc(h.meterType)}`:''}`:''}${h.cost?` · $${Number(h.cost).toFixed(2)}`:''}</div>${h.notes?`<div>${esc(h.notes)}</div>`:''}<div style="margin-top:7px">${h.taskId?`<button class="undo-btn" onclick="undoMaintenanceCompletion('${h.id}')">↶ Mark Not Done</button>`:h.asset==='Home / Seasonal'?`<button class="undo-btn" onclick="undoSeasonalCompletion('${seasonal.find(s=>s.name===h.task)?.id||''}')">↶ Mark Not Done</button>`:''}</div></div>`).join(''):'<p class="muted">No completed maintenance recorded yet.</p>';
 }
 
 
@@ -950,6 +951,57 @@ function populateAssigneeSelect(selectId,selected=''){
  el.value=selected||'';
 }
 
+
+function addMonthsSafe(dateStr,n){
+ const d=new Date((dateStr||todayISO())+'T12:00:00');
+ d.setMonth(d.getMonth()+(+n||0));
+ return d.toISOString().slice(0,10);
+}
+function previousHistoryForTask(taskId,excludeId){
+ return history.filter(h=>h.taskId===taskId&&h.id!==excludeId).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0]||null;
+}
+window.undoMaintenanceCompletion=function(historyId){
+ const h=history.find(x=>x.id===historyId);
+ if(!h)return;
+ if(!confirm('Mark this maintenance as not completed?'))return;
+ const t=tasks.find(x=>x.id===h.taskId);
+ if(t){
+   t.completed=false;
+   const prev=previousHistoryForTask(t.id,h.id);
+   if(prev){
+     t.lastCompleted=prev.date||'';
+     t.lastCompletedMeter=prev.meter||'';
+     if(t.months)t.dueDate=addMonthsSafe(prev.date,t.months);
+     if(prev.meter!==''&&prev.meter!=null){
+       t.nextDueMeterMiles=(prev.meterType==='miles'&&t.miles)?(+prev.meter+t.miles):'';
+       t.nextDueMeterHours=(prev.meterType==='hours'&&t.hours)?(+prev.meter+t.hours):'';
+     }
+   }else{
+     t.lastCompleted='';
+     t.lastCompletedMeter='';
+     t.nextDueMeterMiles='';
+     t.nextDueMeterHours='';
+     // Restore it to an active state. If it previously had no known due date, use today.
+     t.dueDate=t.dueDate&&new Date(t.dueDate+'T12:00:00')<new Date()?t.dueDate:todayISO();
+   }
+ }
+ history=history.filter(x=>x.id!==historyId);
+ localStorage.setItem(TK,JSON.stringify(tasks));
+ localStorage.setItem(HK,JSON.stringify(history));
+ render();
+};
+window.undoSeasonalCompletion=function(id){
+ const x=seasonal.find(s=>s.id===id);
+ if(!x)return;
+ if(!confirm('Mark this seasonal task as not completed?'))return;
+ const matching=history.filter(h=>h.asset==='Home / Seasonal'&&h.task===x.name).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ if(matching.length)history=history.filter(h=>h.id!==matching[0].id);
+ x.lastDone='';
+ localStorage.setItem(SK,JSON.stringify(seasonal));
+ localStorage.setItem(HK,JSON.stringify(history));
+ render();
+};
+
 let currentStatusFilter='all';
 function render(){
  renderAssets('vehicle','vehiclesList');renderAssets('power','powerList');renderAssets('home','homeList');
@@ -967,7 +1019,7 @@ function render(){
  $('recentHistory').innerHTML=historyRows(null,8);
 
  const q=$('search').value.toLowerCase(),f=$('assetFilter').value,person=$('assigneeFilter')?.value||'';
- const baseFiltered=tasks.filter(t=>(!f||t.asset===f)&&(!person||t.assignee===person)&&(`${t.name} ${t.asset} ${t.assignee||''} ${t.notes} ${(t.parts||[]).map(p=>Object.values(p).join(' ')).join(' ')}`).toLowerCase().includes(q));
+ const baseFiltered=tasks.filter(t=>!t.completed&&(!f||t.asset===f)&&(!person||t.assignee===person)&&(`${t.name} ${t.asset} ${t.assignee||''} ${t.notes} ${(t.parts||[]).map(p=>Object.values(p).join(' ')).join(' ')}`).toLowerCase().includes(q));
  const allFiltered=baseFiltered.filter(t=>{
    if(currentStatusFilter==='all')return true;
    const u=taskUrgency(t);
@@ -1051,11 +1103,12 @@ $('taskForm').onsubmit=e=>{e.preventDefault();let id=$('taskId').value,home=isHo
 $('cancelTask').onclick=()=>$('taskDialog').close();
 
 window.completeTask=id=>{const t=tasks.find(x=>x.id===id),a=assetByName(t.asset);$('completeTaskId').value=id;$('completeTitle').textContent=`${t.name} — ${t.asset}`;$('completedDate').value=todayISO();$('completedCost').value='';$('completedNotes').value='';$('completedMeter').value=(a&&a.type!=='home')?a.meter||'':'';$('completeMeterWrap').classList.toggle('hidden',!a||a.type==='home');$('completeDialog').showModal()};
-$('completeForm').onsubmit=e=>{e.preventDefault();const id=$('completeTaskId').value,t=tasks.find(x=>x.id===id),a=assetByName(t.asset);const date=$('completedDate').value, meter=(a&&a.type!=='home')?$('completedMeter').value:'';history.push({id:uid(),taskId:id,task:t.name,asset:t.asset,assignee:t.assignee||'',date,cost:$('completedCost').value,meter,meterType:a?.meterType||'',notes:$('completedNotes').value});if(a&&a.type!=='home'&&meter!=='')a.meter=meter;if(t.months)t.dueDate=addMonths(date,t.months);else if(!t.dueDate)t.dueDate='';t.lastCompleted=date;t.lastCompletedMeter=meter;t.nextDueMeterMiles=(a?.meterType==='miles'&&t.miles&&meter!=='')?(+meter+t.miles):'';t.nextDueMeterHours=(a?.meterType==='hours'&&t.hours&&meter!=='')?(+meter+t.hours):'';$('completeDialog').close();save()};
+$('completeForm').onsubmit=e=>{e.preventDefault();const id=$('completeTaskId').value,t=tasks.find(x=>x.id===id),a=assetByName(t.asset);const date=$('completedDate').value, meter=(a&&a.type!=='home')?$('completedMeter').value:'';history.push({id:uid(),taskId:id,task:t.name,asset:t.asset,assignee:t.assignee||'',date,cost:$('completedCost').value,meter,meterType:a?.meterType||'',notes:$('completedNotes').value});if(a&&a.type!=='home'&&meter!=='')a.meter=meter;if(t.months)t.dueDate=addMonths(date,t.months);else if(t.miles||t.hours){t.dueDate='';}else{t.completed=true;t.dueDate='';}t.lastCompleted=date;t.lastCompletedMeter=meter;t.nextDueMeterMiles=(a?.meterType==='miles'&&t.miles&&meter!=='')?(+meter+t.miles):'';t.nextDueMeterHours=(a?.meterType==='hours'&&t.hours&&meter!=='')?(+meter+t.hours):'';$('completeDialog').close();save()};
 $('cancelComplete').onclick=()=>$('completeDialog').close();
 $('search').oninput=render;
 $('assetFilter').onchange=render;
 $('assigneeFilter').onchange=render;
+$('showCompletedSeasonal').onchange=renderSeasonal;
 
 $('closeDetail').onclick=()=>$('equipmentDetailDialog').close();
 document.querySelectorAll('[data-detail-tab]').forEach(b=>b.onclick=()=>renderDetailTab(b.dataset.detailTab));
