@@ -117,11 +117,13 @@
     <button id="addChoreBtn" type="button">+ Add Chore</button>
   </div>
   <div class="chore-toolbar">
+    <button data-chore-filter="assign">Assign This Week</button>
     <button data-chore-filter="today" class="active">Today</button>
     <button data-chore-filter="week">This Week</button>
     <button data-chore-filter="all">All Chores</button>
     <select id="chorePersonFilter"><option value="">Everyone</option></select>
   </div>
+  <div id="chorePeopleSummary" class="chore-people-summary"></div>
   <div id="choreList" class="chore-list"></div>
 </section>
 </main>
@@ -185,7 +187,7 @@
 <h3 id="choreDialogTitle">Add Weekly Chore</h3>
 <input id="choreId" type="hidden">
 <label>Chore<input id="choreName" required placeholder="e.g. Take trash to road"></label>
-<label>Assigned To<select id="choreAssignee"></select></label>
+<label>Preferred / Default Assignee<select id="choreAssignee"></select></label>
 <label>Day<select id="choreDay">
 <option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
 </select></label>
