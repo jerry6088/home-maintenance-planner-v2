@@ -1037,12 +1037,11 @@ function renderChores(){
  list.sort((a,b)=>['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(a.day)-['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(b.day));
  $('choreList').innerHTML=list.length?list.map(c=>`<article class="chore-card ${choreDoneThisWeek(c)?'done':''}"><div><div class="chore-title">${esc(c.name)}</div><div class="chore-meta">${esc(c.day)} · ${c.assignee?`Assigned to ${esc(c.assignee)}`:'Unassigned'}</div>${c.notes?`<p>${esc(c.notes)}</p>`:''}${choreDoneThisWeek(c)?'<span class="completed-badge">✓ Completed this week</span>':''}</div><div class="chore-actions">${choreDoneThisWeek(c)?`<button class="undo-chore" onclick="undoChore('${c.id}')">↶ Undo</button>`:`<button onclick="completeChore('${c.id}')">✓ Complete</button>`}<button class="edit-chore" onclick="editChore('${c.id}')">Edit</button></div></article>`).join(''):'<div class="dashboard-panel"><p class="muted">No chores to show for this view.</p></div>';
 }
-window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek=mondayOfWeek();c.completedDate=todayISO();saveChores();renderChores()};
-window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek='';c.completedDate='';saveChores();renderChores()};
+window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek=mondayOfWeek();c.completedDate=todayISO();saveChores();renderChores();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
+window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek='';c.completedDate='';saveChores();renderChores();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
 window.editChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;$('choreId').value=c.id;$('choreName').value=c.name;populateAssigneeSelect('choreAssignee',c.assignee||'');$('choreDay').value=c.day;$('choreNotes').value=c.notes||'';$('choreDialogTitle').textContent='Edit Weekly Chore';$('choreDialog').showModal()};
 
 
-let calendarPanelOpen=false;
 let calendarCursor=new Date();
 calendarCursor.setDate(1);
 let selectedCalendarDate='';
@@ -1063,16 +1062,7 @@ function calendarItemsForDate(dateStr){
  chores.filter(c=>c.assignmentWeek===mondayOfWeek()&&choreDateForWeek(c)===dateStr).forEach(c=>items.push({type:'Chore',name:c.name,asset:'Weekly Chores',assignee:c.weekAssignee||'',status:choreDoneThisWeek(c)?'completed':'scheduled',id:c.id}));
  return items;
 }
-function renderCalendarState(){
- const body=$('calendarPanelBody'),btn=$('toggleCalendarPanel');
- if(!body||!btn)return;
- body.classList.toggle('hidden',!calendarPanelOpen);
- btn.textContent=calendarPanelOpen?'Hide':'Show';
- btn.setAttribute('aria-expanded',calendarPanelOpen?'true':'false');
-}
 function renderCalendar(){
- renderCalendarState();
- if(!calendarPanelOpen)return;
  const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth();
  $('calendarMonthLabel').textContent=calendarCursor.toLocaleDateString(undefined,{month:'long',year:'numeric'});
  const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());
@@ -1093,7 +1083,7 @@ window.selectCalendarDate=function(ds){
 function renderCalendarDayDetails(ds){
  const items=calendarItemsForDate(ds);
  const label=new Date(ds+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
- $('calendarDayDetails').innerHTML=`<h3>${esc(label)}</h3>`+(items.length?items.map(i=>`<div class="calendar-detail-item"><strong>${esc(i.name)}</strong><div class="calendar-detail-meta">${esc(i.type)} · ${esc(i.asset)}${i.assignee?` · Assigned to ${esc(i.assignee)}`:''}</div></div>`).join(''):'<p class="muted">Nothing scheduled for this day.</p>');
+ $('calendarDayDetails').innerHTML=`<h3>${esc(label)}</h3>`+(items.length?items.map(i=>`<div class="calendar-detail-item"><strong>${esc(i.name)}</strong><div class="calendar-detail-meta">${esc(i.type)} · ${esc(i.asset)}${i.assignee?` · Assigned to ${esc(i.assignee)}`:''}</div><div class="person-task-actions" style="margin-top:8px">${i.type==='Maintenance'?`<button onclick="completeTask('${i.id}')">✓ Complete</button><button class="secondary" onclick="editTask('${i.id}')">Edit</button>`:`<button onclick="completeChore('${i.id}');renderCalendar()">✓ Complete</button><button class="secondary" onclick="editChore('${i.id}')">Edit Chore</button>`}</div></div>`).join(''):'<p class="muted">Nothing scheduled for this day.</p>');
 }
 
 let currentStatusFilter='all';
@@ -1109,8 +1099,6 @@ function render(){
  }
  $('peopleMiniList').innerHTML=PEOPLE.map(p=>`<button type="button" class="${prevAssignee===p?'active':''}" onclick="openPersonTasks('${esc(p)}')">${esc(p)}</button>`).join('');
  $('equipmentTotal').textContent=assets.length;
- renderCalendarState();
- if(calendarPanelOpen)renderCalendar();
  renderSeasonalPanelState();
  if(seasonalPanelOpen){renderSeasonal();}
  $('recentHistory').innerHTML=historyRows(null,8);
@@ -1160,6 +1148,7 @@ function updateMeterVisibility(type){$('meterFields').classList.toggle('hidden',
 
 const pageMeta={
  maintenance:['HOME & PROPERTY','Dashboard','Everything that needs attention, grouped and prioritized.'],
+ calendar:['SCHEDULE','Calendar','Maintenance and weekly chores organized by date.'],
  vehicles:['FLEET','Vehicles','Mileage-based maintenance, OEM parts, manuals and service history.'],
  power:['EQUIPMENT','Power Equipment','Hours-based maintenance for mowers, UTVs, tractors and outdoor equipment.'],
  home:['HOME SYSTEMS','Home Equipment','Appliances, HVAC, manuals, parts and calendar maintenance.'],
@@ -1224,6 +1213,7 @@ function showMainView(view){
  $(view).classList.remove('hidden');
  setPageMeta(view);
  if(view==='chores')renderChores();
+ if(view==='calendar')renderCalendar();
  if(view==='person'&&currentPerson)renderPersonDashboard(currentPerson);
  closeSidebar();
  window.scrollTo({top:0,behavior:'smooth'});
@@ -1295,9 +1285,11 @@ $('chorePersonFilter').onchange=renderChores;
 $('backDashboardBtn').onclick=()=>{currentPerson='';showMainView('maintenance')};
 
 
-$('toggleCalendarPanel').onclick=()=>{calendarPanelOpen=!calendarPanelOpen;renderCalendar();};
 $('prevMonthBtn').onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendar();};
 $('nextMonthBtn').onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderCalendar();};
 $('todayMonthBtn').onclick=()=>{calendarCursor=new Date();calendarCursor.setDate(1);selectedCalendarDate=isoLocal(new Date());renderCalendar();};
+
+
+$('calendarTodayBtn').onclick=()=>{calendarCursor=new Date();calendarCursor.setDate(1);selectedCalendarDate=isoLocal(new Date());renderCalendar();};
 
 render();
