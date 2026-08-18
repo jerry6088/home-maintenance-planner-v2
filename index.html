@@ -93,6 +93,24 @@
 <section id="power" class="view hidden"><h2>Power Equipment</h2><div id="powerList" class="grid"></div></section>
 <section id="home" class="view hidden"><h2>Home Equipment</h2><div id="homeList" class="grid"></div></section>
 
+
+<section id="person" class="view hidden">
+  <div class="person-hero">
+    <div><small>PERSON DASHBOARD</small><h2 id="personTitle">Assigned Tasks</h2><p id="personSubtitle">Everything assigned to this person in one place.</p></div>
+    <button id="backDashboardBtn" type="button">← Back to Dashboard</button>
+  </div>
+  <div class="person-stats">
+    <div><small>OVERDUE</small><strong id="personOverdue">0</strong></div>
+    <div><small>DUE SOON</small><strong id="personDueSoon">0</strong></div>
+    <div><small>CHORES TODAY</small><strong id="personChoresToday">0</strong></div>
+    <div><small>DONE THIS WEEK</small><strong id="personDoneWeek">0</strong></div>
+  </div>
+  <section class="person-section"><div class="section-title-row"><div><small>MAINTENANCE</small><h2>Assigned Maintenance</h2></div></div><div id="personMaintenance"></div></section>
+  <section class="person-section"><div class="section-title-row"><div><small>HOME</small><h2>Seasonal Maintenance</h2></div></div><div id="personSeasonal"></div></section>
+  <section class="person-section"><div class="section-title-row"><div><small>CHORES</small><h2>Weekly Chores</h2></div></div><div id="personChores"></div></section>
+  <section class="person-section"><div class="section-title-row"><div><small>HISTORY</small><h2>Recent Activity</h2></div></div><div id="personHistory"></div></section>
+</section>
+
 <section id="chores" class="view hidden">
   <div class="chores-summary">
     <div><small>WEEKLY PROGRESS</small><h2 id="choreProgress">0 of 0 complete</h2></div>

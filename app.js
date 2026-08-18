@@ -1106,7 +1106,8 @@ const pageMeta={
  vehicles:['FLEET','Vehicles','Mileage-based maintenance, OEM parts, manuals and service history.'],
  power:['EQUIPMENT','Power Equipment','Hours-based maintenance for mowers, UTVs, tractors and outdoor equipment.'],
  home:['HOME SYSTEMS','Home Equipment','Appliances, HVAC, manuals, parts and calendar maintenance.'],
- chores:['HOUSEHOLD','Weekly Chores','Recurring household chores, assignments and weekly progress.']
+ chores:['HOUSEHOLD','Weekly Chores','Recurring household chores, assignments and weekly progress.'],
+ person:['ASSIGNED TASKS','Person Dashboard','Maintenance, seasonal work and chores assigned to one person.']
 };
 function setPageMeta(view){
  const m=pageMeta[view]||pageMeta.maintenance;
@@ -1120,22 +1121,45 @@ function openSidebar(){
 }
 
 window.openPersonTasks=function(person){
- showMainView('maintenance');
- const filter=$('assigneeFilter');
- if(filter){
-   filter.value=person;
-   render();
-   if($('assigneeFilter'))$('assigneeFilter').value=person;
- }
- // Collapse seasonal maintenance so assigned equipment tasks are immediately visible.
- seasonalPanelOpen=false;
- renderSeasonalPanelState();
- // Scroll to Maintenance by Equipment after the dashboard updates.
- setTimeout(()=>{
-   const groups=$('equipmentGroups');
-   groups?.closest('.dashboard-panel')?.scrollIntoView({behavior:'smooth',block:'start'});
- },100);
+ currentPerson=person;
+ showMainView('person');
+ renderPersonDashboard(person);
 };
+
+
+let currentPerson='';
+function personTaskStatus(t){
+ const s=statusOf(t);
+ if(s==='overdue')return 'overdue';
+ if(s==='due-soon')return 'due-soon';
+ return 'upcoming';
+}
+function renderPersonDashboard(person){
+ currentPerson=person;
+ $('personTitle').textContent=person+"'s Tasks";
+ $('personSubtitle').textContent='Maintenance, seasonal work and weekly chores assigned to '+person+'.';
+
+ const mt=tasks.filter(t=>!t.completed&&t.assignee===person);
+ const overdue=mt.filter(t=>statusOf(t)==='overdue').length;
+ const soon=mt.filter(t=>statusOf(t)==='due-soon').length;
+ const pc=chores.filter(c=>c.assignee===person);
+ const today=pc.filter(c=>c.day===currentDayName()&&!choreDoneThisWeek(c)).length;
+ const doneWeek=pc.filter(choreDoneThisWeek).length;
+ $('personOverdue').textContent=overdue;$('personDueSoon').textContent=soon;$('personChoresToday').textContent=today;$('personDoneWeek').textContent=doneWeek;
+
+ const sorted=mt.slice().sort((a,b)=>{const rank={overdue:0,'due-soon':1,upcoming:2};return rank[personTaskStatus(a)]-rank[personTaskStatus(b)]});
+ $('personMaintenance').innerHTML=sorted.length?sorted.map(t=>`<article class="person-task ${personTaskStatus(t)}"><div><div class="person-task-title">${esc(t.name)}</div><div class="person-task-meta">${esc(t.asset)}${t.dueDate?` · Due ${esc(t.dueDate)}`:''}</div>${partsHTML(t)}</div><div class="person-task-actions"><button onclick="completeTask('${t.id}')">✓ Complete</button><button class="secondary" onclick="editTask('${t.id}')">Edit</button></div></article>`).join(''):'<p class="muted">No active maintenance assigned.</p>';
+
+ const ss=seasonal.filter(s=>s.assignee===person&&!seasonalDoneThisCycle(s));
+ $('personSeasonal').innerHTML=ss.length?ss.map(s=>`<article class="person-task"><div><div class="person-task-title">${esc(s.name)}</div><div class="person-task-meta">${esc(s.season)}</div><p>${esc(s.notes||'')}</p></div><div class="person-task-actions"><button onclick="completeSeasonal('${s.id}');renderPersonDashboard('${esc(person)}')">✓ Complete</button></div></article>`).join(''):'<p class="muted">No active seasonal maintenance assigned.</p>';
+
+ const activeChores=pc.filter(c=>!choreDoneThisWeek(c));
+ $('personChores').innerHTML=activeChores.length?activeChores.map(c=>`<article class="person-task"><div><div class="person-task-title">${esc(c.name)}</div><div class="person-task-meta">${esc(c.day)}</div>${c.notes?`<p>${esc(c.notes)}</p>`:''}</div><div class="person-task-actions"><button onclick="completeChore('${c.id}');renderPersonDashboard('${esc(person)}')">✓ Complete</button><button class="secondary" onclick="editChore('${c.id}')">Edit</button></div></article>`).join(''):'<p class="muted">No active weekly chores assigned.</p>';
+
+ const ph=history.filter(h=>h.assignee===person).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,10);
+ $('personHistory').innerHTML=ph.length?ph.map(h=>`<div class="history-row"><strong>${esc(h.task||h.name||'Completed task')}</strong><div class="history-meta">${esc(h.date||'')}${h.asset?` · ${esc(h.asset)}`:''}</div>${h.notes?`<div>${esc(h.notes)}</div>`:''}</div>`).join(''):'<p class="muted">No recorded activity yet.</p>';
+ document.querySelectorAll('#peopleMiniList button').forEach(b=>b.classList.toggle('active',b.textContent===person));
+}
 
 function showMainView(view){
  document.querySelectorAll('#tabs button[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
@@ -1143,6 +1167,7 @@ function showMainView(view){
  $(view).classList.remove('hidden');
  setPageMeta(view);
  if(view==='chores')renderChores();
+ if(view==='person'&&currentPerson)renderPersonDashboard(currentPerson);
  closeSidebar();
  window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1164,7 +1189,7 @@ $('taskForm').onsubmit=e=>{e.preventDefault();let id=$('taskId').value,home=isHo
 $('cancelTask').onclick=()=>$('taskDialog').close();
 
 window.completeTask=id=>{const t=tasks.find(x=>x.id===id),a=assetByName(t.asset);$('completeTaskId').value=id;$('completeTitle').textContent=`${t.name} — ${t.asset}`;$('completedDate').value=todayISO();$('completedCost').value='';$('completedNotes').value='';$('completedMeter').value=(a&&a.type!=='home')?a.meter||'':'';$('completeMeterWrap').classList.toggle('hidden',!a||a.type==='home');$('completeDialog').showModal()};
-$('completeForm').onsubmit=e=>{e.preventDefault();const id=$('completeTaskId').value,t=tasks.find(x=>x.id===id),a=assetByName(t.asset);const date=$('completedDate').value, meter=(a&&a.type!=='home')?$('completedMeter').value:'';history.push({id:uid(),taskId:id,task:t.name,asset:t.asset,assignee:t.assignee||'',date,cost:$('completedCost').value,meter,meterType:a?.meterType||'',notes:$('completedNotes').value});if(a&&a.type!=='home'&&meter!=='')a.meter=meter;if(t.months)t.dueDate=addMonths(date,t.months);else if(t.miles||t.hours){t.dueDate='';}else{t.completed=true;t.dueDate='';}t.lastCompleted=date;t.lastCompletedMeter=meter;t.nextDueMeterMiles=(a?.meterType==='miles'&&t.miles&&meter!=='')?(+meter+t.miles):'';t.nextDueMeterHours=(a?.meterType==='hours'&&t.hours&&meter!=='')?(+meter+t.hours):'';$('completeDialog').close();save()};
+$('completeForm').onsubmit=e=>{e.preventDefault();const id=$('completeTaskId').value,t=tasks.find(x=>x.id===id),a=assetByName(t.asset);const date=$('completedDate').value, meter=(a&&a.type!=='home')?$('completedMeter').value:'';history.push({id:uid(),taskId:id,task:t.name,asset:t.asset,assignee:t.assignee||'',date,cost:$('completedCost').value,meter,meterType:a?.meterType||'',notes:$('completedNotes').value});if(a&&a.type!=='home'&&meter!=='')a.meter=meter;if(t.months)t.dueDate=addMonths(date,t.months);else if(t.miles||t.hours){t.dueDate='';}else{t.completed=true;t.dueDate='';}t.lastCompleted=date;t.lastCompletedMeter=meter;t.nextDueMeterMiles=(a?.meterType==='miles'&&t.miles&&meter!=='')?(+meter+t.miles):'';t.nextDueMeterHours=(a?.meterType==='hours'&&t.hours&&meter!=='')?(+meter+t.hours):'';$('completeDialog').close();save();if(currentPerson&&!$('person').classList.contains('hidden'))renderPersonDashboard(currentPerson)};
 $('cancelComplete').onclick=()=>$('completeDialog').close();
 $('search').oninput=render;
 $('assetFilter').onchange=render;
@@ -1208,5 +1233,8 @@ $('cancelChore').onclick=()=>$('choreDialog').close();
 $('choreForm').onsubmit=e=>{e.preventDefault();const id=$('choreId').value;const data={id:id||uid(),name:$('choreName').value.trim(),assignee:$('choreAssignee').value||'',day:$('choreDay').value,notes:$('choreNotes').value.trim(),completedWeek:'',completedDate:''};if(id){const old=chores.find(c=>c.id===id);if(old){data.completedWeek=old.completedWeek||'';data.completedDate=old.completedDate||'';Object.assign(old,data)}}else chores.push(data);saveChores();$('choreDialog').close();renderChores()};
 document.querySelectorAll('[data-chore-filter]').forEach(b=>b.onclick=()=>{choreFilter=b.dataset.choreFilter;renderChores()});
 $('chorePersonFilter').onchange=renderChores;
+
+
+$('backDashboardBtn').onclick=()=>{currentPerson='';showMainView('maintenance')};
 
 render();

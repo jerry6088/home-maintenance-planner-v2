@@ -157,3 +157,11 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 .chore-card.done{opacity:.65}.chore-title{font-size:16px;font-weight:900}.chore-meta{font-size:13px;color:var(--muted);margin-top:4px}.chore-actions{display:flex;gap:7px;flex-wrap:wrap}
 .chore-actions .edit-chore{background:var(--royal-soft)!important;color:var(--royal)!important}.chore-actions .undo-chore{background:#fff3f0!important;color:#9a3d2f!important}
 @media(max-width:650px){.chores-summary,.chore-card{flex-direction:column}.chore-toolbar select{margin-left:0;width:100%}}
+
+.person-hero{background:linear-gradient(135deg,#2146d0,#1736ab);color:white;border-radius:16px;padding:22px;display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}
+.person-hero small{color:#dfe6ff;font-weight:900;letter-spacing:.1em}.person-hero h2{font-size:28px;margin:4px 0}.person-hero p{margin:0;color:#e5ebff}.person-hero button{background:white;color:#2146d0}
+.person-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.person-stats>div{background:white;border:1px solid var(--line);border-radius:13px;padding:14px}.person-stats small{display:block;font-size:11px;font-weight:900;color:#68748a}.person-stats strong{display:block;font-size:27px;margin-top:4px}
+.person-section{background:white;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}.person-section .section-title-row{margin-bottom:10px}
+.person-task{border:1px solid #e1e6ef;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.person-task:last-child{margin-bottom:0}.person-task-title{font-weight:900}.person-task-meta{font-size:13px;color:#68748a;margin-top:3px}.person-task-actions{display:flex;gap:7px;flex-wrap:wrap}
+.person-task.overdue{border-left:5px solid #c9453d}.person-task.due-soon{border-left:5px solid #d38a22}.person-task.upcoming{border-left:5px solid #3b7d51}
+@media(max-width:800px){.person-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.person-hero,.person-task{flex-direction:column}.person-stats{grid-template-columns:1fr 1fr}}
