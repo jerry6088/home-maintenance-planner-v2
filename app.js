@@ -647,7 +647,7 @@ function esc(x=''){return String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;
 function addMonths(dateStr,n){const d=new Date((dateStr||todayISO())+'T12:00:00');d.setMonth(d.getMonth()+(+n||0));return d.toISOString().slice(0,10)}
 function isHomeAsset(name){return assetByName(name)?.type==='home'}
 function meterLabel(a){if(!a||a.type==='home'||a.meterType==='none')return'';return a.meter!==''?`${a.meter} ${a.meterType}`:'Meter not entered'}
-function renderAssets(type,id){$(id).innerHTML=assets.filter(a=>a.type===type).map(a=>`<article class="card"><h3>${esc(a.name)}</h3><div class="muted">${esc([a.year,a.make,a.model].filter(Boolean).join(' '))}</div>${type!=='home'?`<div class="meter">${esc(meterLabel(a))}</div>`:''}${a.serial?`<div class="muted">VIN / Serial: ${esc(a.serial)}</div>`:''}<p>${esc(a.notes||'')}</p><div class="card-actions"><button onclick="openEquipmentDetail('${a.id}','parts')">Parts List</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','manuals')">Manuals</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','specs')">Specs</button><button class="secondary" onclick="editAsset('${a.id}')">Edit</button></div></article>`).join('')}
+function renderAssets(type,id){$(id).innerHTML=assets.filter(a=>a.type===type).map(a=>`<article class="card"><h3>${esc(a.name)}</h3><div class="muted">${esc([a.year,a.make,a.model].filter(Boolean).join(' '))}</div>${type!=='home'?`<div class="meter">${esc(meterLabel(a))}</div>`:''}${a.serial?`<div class="muted">VIN / Serial: ${esc(a.serial)}</div>`:''}<p>${esc(a.notes||'')}</p><div class="card-actions"><button onclick="openEquipmentDetail('${a.id}','parts')">Parts List</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','manuals')">Manuals</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','specs')">Specs</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','history')">History</button><button class="secondary" onclick="editAsset('${a.id}')">Edit</button></div></article>`).join('')}
 function partsHTML(t){if(!t.parts?.length)return'';return `<div class="parts"><strong>Parts & Supplies</strong>${t.parts.map(p=>`<div class="part-view"><b>${esc(p.description)}</b>${p.oem?` · OEM: ${esc(p.oem)}`:''}${p.aftermarket?` · Cross-ref: ${esc(p.aftermarket)}`:''}${p.qty?` · Qty/Capacity: ${esc(p.qty)}`:''}${p.notes?`<br>${esc(p.notes)}`:''}</div>`).join('')}</div>`}
 function historyHTML(t){const h=history.filter(x=>x.taskId===t.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));if(!h.length)return'';return `<details class="history"><summary>Service history (${h.length})</summary>${h.map(x=>`<div>${esc(x.date)}${x.meter!==''&&x.meter!=null?` · ${esc(x.meter)} ${esc(x.meterType||'')}`:''}${x.cost?` · $${Number(x.cost).toFixed(2)}`:''}${x.notes?`<br>${esc(x.notes)}`:''}</div>`).join('<hr>')}</details>`}
 function dueClass(t){if(!t.dueDate)return'';const days=(new Date(t.dueDate+'T12:00:00')-new Date())/86400000;if(days<0)return'overdue';if(days<=30)return'soon';return''}
@@ -850,7 +850,7 @@ function collectedParts(assetName){
 }
 function renderDetailTab(tab){
  document.querySelectorAll('[data-detail-tab]').forEach(b=>b.classList.toggle('active',b.dataset.detailTab===tab));
- ['detailParts','detailManuals','detailSpecs'].forEach(id=>$(id).classList.add('hidden'));
+ ['detailParts','detailManuals','detailSpecs','detailHistory'].forEach(id=>$(id).classList.add('hidden'));
  const a=assets.find(x=>x.id===$('equipmentDetailDialog').dataset.assetId);if(!a)return;
  const lib=equipmentLibrary[a.name]||{manuals:[],specs:[]};
  if(tab==='parts'){
@@ -859,6 +859,9 @@ function renderDetailTab(tab){
  }else if(tab==='manuals'){
   $('detailManuals').classList.remove('hidden');
   $('detailManuals').innerHTML=lib.manuals.length?lib.manuals.map(m=>`<article class="manual-card"><h4>${esc(m.title)}</h4><div class="muted">${esc(m.note||'')}</div>${m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">Open manufacturer manual ↗</a>`:'<div class="muted" style="margin-top:8px">Manual link pending verification.</div>'}</article>`).join(''):'<p class="muted">Manufacturer manual has not been attached yet.</p>';
+ }else if(tab==='history'){
+  $('detailHistory').classList.remove('hidden');
+  $('detailHistory').innerHTML=historyRows(a.name);
  }else{
   $('detailSpecs').classList.remove('hidden');
   const base=[['Make / Brand',a.make||'—'],['Model',a.model||'—'],['Year',a.year||'—'],['VIN / Serial',a.serial||'—']];
@@ -875,6 +878,50 @@ window.openEquipmentDetail=(id,tab='parts')=>{
  renderDetailTab(tab);d.showModal();
 };
 
+
+const SK='hmv2-seasonal';
+let seasonal=JSON.parse(localStorage.getItem(SK)||'null')||[
+ {id:'s1',season:'Spring',name:'HVAC spring inspection',notes:'Inspect heat pump/air handler, outdoor coil, condensate drain and filter before cooling season.',months:12,lastDone:''},
+ {id:'s2',season:'Spring',name:'Gutters & downspouts',notes:'Clean debris; verify downspouts discharge away from foundation.',months:12,lastDone:''},
+ {id:'s3',season:'Spring',name:'Exterior caulk & weather seal inspection',notes:'Inspect windows, doors, penetrations and exterior sealant.',months:12,lastDone:''},
+ {id:'s4',season:'Spring',name:'Plumbing leak inspection',notes:'Check under sinks, toilets, supply lines, outdoor faucets and visible piping.',months:12,lastDone:''},
+ {id:'s5',season:'Summer',name:'HVAC outdoor unit cleanup',notes:'Remove grass/leaves and maintain clear airflow around condenser/heat pump.',months:12,lastDone:''},
+ {id:'s6',season:'Summer',name:'Dryer vent inspection & cleaning',notes:'Inspect/clean dryer exhaust duct and exterior termination.',months:12,lastDone:''},
+ {id:'s7',season:'Summer',name:'Garage door inspection & lubrication',notes:'Inspect rollers, hinges, cables, springs and balance; lubricate appropriate moving points. Do not adjust loaded torsion springs unless qualified.',months:12,lastDone:''},
+ {id:'s8',season:'Fall',name:'HVAC fall inspection',notes:'Inspect heating operation, filter, blower area and heat-pump defrost readiness.',months:12,lastDone:''},
+ {id:'s9',season:'Fall',name:'Gutters & roof drainage',notes:'Clean leaves/debris and inspect drainage before winter.',months:12,lastDone:''},
+ {id:'s10',season:'Fall',name:'Smoke & CO alarm test',notes:'Test alarms; replace batteries where applicable and replace expired alarms.',months:6,lastDone:''},
+ {id:'s11',season:'Fall',name:'Exterior freeze preparation',notes:'Inspect hose bibs, exposed piping and weather seals before freezing weather.',months:12,lastDone:''},
+ {id:'s12',season:'Winter',name:'Home water leak / freeze inspection',notes:'Inspect exposed plumbing and areas vulnerable to freezing or condensation.',months:12,lastDone:''},
+ {id:'s13',season:'Winter',name:'Fire extinguisher inspection',notes:'Check gauge, pin/seal, accessibility and condition; follow manufacturer inspection requirements.',months:12,lastDone:''},
+ {id:'s14',season:'Winter',name:'Smoke & CO alarm test',notes:'Test alarms and verify they are within service life.',months:6,lastDone:''}
+];
+let seasonalFilter='All';
+
+function seasonalDoneThisCycle(x){
+ if(!x.lastDone)return false;
+ const d=new Date(x.lastDone+'T12:00:00'),now=new Date();
+ const months=(now.getFullYear()-d.getFullYear())*12+(now.getMonth()-d.getMonth());
+ return months<(x.months||12);
+}
+window.completeSeasonal=function(id){
+ const x=seasonal.find(s=>s.id===id);if(!x)return;
+ x.lastDone=new Date().toISOString().slice(0,10);
+ history.push({id:uid(),asset:'Home / Seasonal',task:x.name,date:x.lastDone,meter:'',meterType:'',cost:'',notes:x.season+' seasonal maintenance completed'});
+ localStorage.setItem(SK,JSON.stringify(seasonal));
+ localStorage.setItem(HK,JSON.stringify(history));
+ render();
+};
+function renderSeasonal(){
+ document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active',b.dataset.season===seasonalFilter));
+ const list=seasonal.filter(x=>seasonalFilter==='All'||x.season===seasonalFilter);
+ $('seasonalList').innerHTML=list.map(x=>`<article class="season-item ${seasonalDoneThisCycle(x)?'done':''}"><div><div class="season-name">${esc(x.name)}</div><div class="season-meta">${esc(x.season)}${x.lastDone?` · Last completed ${esc(x.lastDone)}`:''}</div><p>${esc(x.notes)}</p></div><div class="season-actions"><button onclick="completeSeasonal('${x.id}')">${seasonalDoneThisCycle(x)?'✓ Completed':'✓ Complete'}</button></div></article>`).join('');
+}
+function historyRows(assetName,limit){
+ const rows=history.filter(h=>!assetName||h.asset===assetName).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,limit||999);
+ return rows.length?rows.map(h=>`<div class="history-row"><strong>${esc(h.task||h.name||'Maintenance')}</strong><div class="history-meta">${esc(h.date||'')}${h.asset?` · ${esc(h.asset)}`:''}${h.meter!==''&&h.meter!=null?` · ${esc(String(h.meter))}${h.meterType?` ${esc(h.meterType)}`:''}`:''}${h.cost?` · $${Number(h.cost).toFixed(2)}`:''}</div>${h.notes?`<div>${esc(h.notes)}</div>`:''}</div>`).join(''):'<p class="muted">No completed maintenance recorded yet.</p>';
+}
+
 let currentStatusFilter='all';
 function render(){
  renderAssets('vehicle','vehiclesList');renderAssets('power','powerList');renderAssets('home','homeList');
@@ -882,6 +929,8 @@ function render(){
  $('assetFilter').innerHTML='<option value="">All equipment</option>'+assets.map(a=>`<option>${esc(a.name)}</option>`).join('');
  $('assetFilter').value=prev;
  $('equipmentTotal').textContent=assets.length;
+ renderSeasonal();
+ $('recentHistory').innerHTML=historyRows(null,8);
 
  const q=$('search').value.toLowerCase(),f=$('assetFilter').value;
  const baseFiltered=tasks.filter(t=>(!f||t.asset===f)&&(`${t.name} ${t.asset} ${t.notes} ${(t.parts||[]).map(p=>Object.values(p).join(' ')).join(' ')}`).toLowerCase().includes(q));
@@ -949,6 +998,7 @@ $('assetFilter').onchange=render;
 
 $('closeDetail').onclick=()=>$('equipmentDetailDialog').close();
 document.querySelectorAll('[data-detail-tab]').forEach(b=>b.onclick=()=>renderDetailTab(b.dataset.detailTab));
+document.querySelectorAll('[data-season]').forEach(b=>b.onclick=()=>{seasonalFilter=b.dataset.season;renderSeasonal();});
 document.querySelectorAll('[data-status-filter]').forEach(b=>b.onclick=()=>{
  currentStatusFilter=b.dataset.statusFilter;
  render();
