@@ -36,6 +36,23 @@
 </section>
 
 <section class="dashboard-panel">
+<div class="section-title-row"><div><small>HOME</small><h2>Seasonal Home Maintenance</h2></div></div>
+<div class="season-tabs">
+<button type="button" data-season="Spring">Spring</button>
+<button type="button" data-season="Summer">Summer</button>
+<button type="button" data-season="Fall">Fall</button>
+<button type="button" data-season="Winter">Winter</button>
+<button type="button" data-season="All" class="active">All</button>
+</div>
+<div id="seasonalList" class="seasonal-list"></div>
+</section>
+
+<section class="dashboard-panel">
+<div class="section-title-row"><div><small>HISTORY</small><h2>Recent Maintenance</h2></div></div>
+<div id="recentHistory"></div>
+</section>
+
+<section class="dashboard-panel">
 <div class="section-title-row">
   <div><small>MAINTENANCE</small><h2>Maintenance by Equipment</h2></div>
   <div class="toolbar compact"><input id="search" placeholder="Search tasks, parts, equipment..."><select id="assetFilter"><option value="">All equipment</option></select></div>
@@ -93,11 +110,11 @@
 <div class="detail-tabs">
 <button type="button" data-detail-tab="parts" class="active">Parts List</button>
 <button type="button" data-detail-tab="manuals">Manuals</button>
-<button type="button" data-detail-tab="specs">Specifications</button>
+<button type="button" data-detail-tab="specs">Specifications</button><button type="button" data-detail-tab="history">History</button>
 </div>
 <section id="detailParts" class="detail-pane"></section>
 <section id="detailManuals" class="detail-pane hidden"></section>
-<section id="detailSpecs" class="detail-pane hidden"></section>
+<section id="detailSpecs" class="detail-pane hidden"></section><section id="detailHistory" class="detail-pane hidden"></section>
 </div>
 </dialog>
 
