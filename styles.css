@@ -124,3 +124,7 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 .seasonal-panel-body{margin-top:4px}
 .seasonal-panel .section-title-row{margin-bottom:0}
 .seasonal-panel .section-title-row:has(+ .seasonal-panel-body:not(.hidden)){margin-bottom:12px}
+
+.people-mini-list button{font-size:11px;background:#ffffff18;border:1px solid #ffffff24;color:white;border-radius:999px;padding:6px 9px}
+.people-mini-list button:hover{background:#ffffff2b}
+.people-mini-list button.active{background:white;color:#2146d0;border-color:white;font-weight:900}
