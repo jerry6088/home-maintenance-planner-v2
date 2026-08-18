@@ -595,6 +595,50 @@ if(localStorage.getItem(MIG)!=='1'){
  localStorage.setItem(KEY,'1');
 })();
 
+
+// Home equipment maintenance + parts migration
+(function(){
+ const KEY='hmv2-home-library-1'; if(localStorage.getItem(KEY)==='1')return;
+ const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const ensure=(asset,name,months,notes,parts=[])=>{
+  let t=tasks.find(x=>norm(x.asset)===norm(asset)&&norm(x.name)===norm(name));
+  if(!t){t={id:uid(),asset,name,dueDate:'',months,miles:0,hours:0,notes,parts};tasks.push(t)}
+  else{t.months=months;t.miles=0;t.hours=0;t.notes=notes;t.parts=parts}
+ };
+ ensure('GE Refrigerator','Replace water filter',6,'Replace sooner if flow drops or filter indicator calls for replacement.',[
+  {description:'Refrigerator water filter',oem:'RPWFE',qty:'1',aftermarket:'',notes:'GE genuine filter listed for exact model GFE28GYNIFS.'}
+ ]);
+ ensure('GE Refrigerator','Clean condenser / ventilation areas',12,'Vacuum accessible dust/debris and keep ventilation areas unobstructed. Follow owner-manual access guidance.',[]);
+ ensure('GE Refrigerator','Inspect door gaskets',6,'Clean gaskets and inspect for tears, deformation or poor sealing.',[]);
+ ensure('GE Dishwasher','Clean filter system',1,'Remove debris and clean filter components; inspect sump area and spray-arm openings.',[
+  {description:'Fine filter / basket',oem:'WD12X25995',qty:'1 as needed',aftermarket:'',notes:'Exact-model service part.'},
+  {description:'Coarse filter',oem:'WD22X25465',qty:'1 as needed',aftermarket:'',notes:'Exact-model service part.'}
+ ]);
+ ensure('GE Dishwasher','Inspect lower spray arm',3,'Inspect for melting, cracks, blockage and free rotation.',[
+  {description:'Lower spray arm',oem:'WD22X33499',qty:'1 as needed',aftermarket:'',notes:'Replacement part for the model family; verify exact revision at purchase.'}
+ ]);
+ ensure('GE Dishwasher','Inspect door seal & leaks',3,'Clean door sealing surfaces and inspect underneath/around unit for signs of leakage.',[]);
+ ensure('GE Top Load Washer','Clean washer / basket',1,'Run the washer cleaning procedure and clean dispenser areas according to owner instructions.',[]);
+ ensure('GE Top Load Washer','Inspect fill hoses & connections',6,'Inspect for bulges, cracking, abrasion and leaks; verify connections are secure.',[]);
+ ensure('GE Top Load Washer','Inspect drain system',6,'Inspect drain hose routing, leaks and slow-drain symptoms.',[
+  {description:'Drain pump assembly',oem:'WH23X28418',qty:'1 as needed',aftermarket:'',notes:'GE exact-model parts catalog.'}
+ ]);
+ ensure('Maytag Microwave','Clean grease filter',1,'Clean grease filter regularly; replace if damaged or no longer cleans effectively.',[
+  {description:'Grease filter',oem:'W10208631A',qty:'1 as needed',aftermarket:'',notes:'Maytag service part.'}
+ ]);
+ ensure('Maytag Microwave','Replace charcoal filter',6,'For recirculating/non-vented installation, replace charcoal filter periodically based on use.',[
+  {description:'Charcoal filter',oem:'8206230A',qty:'1',aftermarket:'',notes:'Applicable when microwave is configured for recirculating ventilation.'}
+ ]);
+ ensure('Goodman Outdoor Heat Pump','Outdoor coil inspection / cleaning',6,'Inspect outdoor coil and cabinet for dirt, grass, leaves and airflow blockage. Clean using appropriate HVAC methods.',[]);
+ ensure('Goodman Outdoor Heat Pump','Professional HVAC inspection',12,'Inspect electrical connections/components, refrigerant-system performance, defrost operation and overall heat-pump condition.',[]);
+ ensure('Goodman Indoor Air Handler','Replace HVAC filter',3,'Replace based on actual filter type, MERV rating, household conditions and pressure drop. Record installed filter size in equipment notes.',[
+  {description:'Return-air filter',oem:'SIZE PENDING',qty:'1',aftermarket:'',notes:'Enter exact installed filter dimensions before purchase.'}
+ ]);
+ ensure('Goodman Indoor Air Handler','Flush condensate drain',6,'Inspect drain pan and flush condensate drain; verify free drainage and no biological buildup.',[]);
+ ensure('Goodman Indoor Air Handler','Blower / indoor coil inspection',12,'Inspect blower wheel/motor area, indoor coil cleanliness, electrical connections and drain pan.',[]);
+ localStorage.setItem(TK,JSON.stringify(tasks));localStorage.setItem(KEY,'1');
+})();
+
 localStorage.setItem(AK,JSON.stringify(assets));localStorage.setItem(TK,JSON.stringify(tasks));localStorage.setItem(HK,JSON.stringify(history));
 
 const $=x=>document.getElementById(x);
@@ -683,6 +727,119 @@ const equipmentLibrary={
   specs:[['Engine','Pending VIN / engine code'],['Oil filter','Pending engine identification'],['Oil capacity','Pending engine identification']]
  }
 };
+
+// Home Equipment Library Update
+Object.assign(equipmentLibrary,{
+ 'Goodman Outdoor Heat Pump':{
+  manuals:[
+   {title:'Goodman GSZ14 Product / Technical Resources',url:'https://www.goodmanmfg.com/products/heat-pumps/gsz14',note:'Manufacturer product family resource for GSZ14 heat pumps.'},
+   {title:'Goodman Literature Library',url:'https://www.goodmanmfg.com/resources/literature-library',note:'Manufacturer literature lookup for installation, service and specification documents.'}
+  ],
+  specs:[
+   ['Model','GSZ140601KD'],['Serial','1703494212'],['Type','Split-system heat pump'],['Nominal capacity','5 ton class'],['Refrigerant','R-410A'],['Electrical','208/230 V'],['Compressor','Single-stage configuration'],['Outdoor coil maintenance','Inspect/clean as needed; keep vegetation/debris clear']
+  ],
+  repair:[
+   ['Contactor','Verify exact OEM by model/serial before purchase'],
+   ['Run capacitor','Verify µF/rating from installed capacitor / OEM catalog'],
+   ['Condenser fan motor','Verify OEM by model/serial'],
+   ['Defrost control / sensor','Verify OEM revision by model/serial'],
+   ['Reversing valve components','Verify exact OEM before purchase']
+  ]
+ },
+ 'Goodman Indoor Air Handler':{
+  manuals:[
+   {title:'Goodman ARUF Product / Technical Resources',url:'https://www.goodmanmfg.com/products/air-handlers-and-coils/air-handlers/aruf',note:'Manufacturer product family resource.'},
+   {title:'Goodman Literature Library',url:'https://www.goodmanmfg.com/resources/literature-library',note:'Use model ARUF61D14AA for exact literature.'}
+  ],
+  specs:[
+   ['Model','ARUF61D14AA'],['Serial','1704251868'],['Electrical','208/230 V'],['Blower motor','3/4 HP'],['Filter','Record actual installed filter dimensions/MERV'],['Condensate','Inspect drain/pan and flush drain routinely']
+  ],
+  repair:[
+   ['Blower motor / module','Verify exact OEM by model/serial'],
+   ['Blower wheel','Verify exact OEM by model/serial'],
+   ['Transformer','Verify voltage/VA and OEM catalog'],
+   ['Electric heat kit','Equipment-dependent; verify installed kit model'],
+   ['Drain pan / condensate parts','Verify OEM by model/serial']
+  ]
+ },
+ 'GE Refrigerator':{
+  manuals:[
+   {title:'GE Refrigerator Owner Support / Manual',url:'https://products.geappliances.com/appliance/gea-specs/GFE28GYNFS/support',note:'GE manufacturer support page for the GFE28GYNF family; exact stored model is GFE28GYNIFS.'},
+   {title:'GE Exact Model Parts Diagrams',url:'https://www.geapplianceparts.com/store/parts/assembly/GFE28GYNIFS',note:'GE genuine parts diagrams for exact model GFE28GYNIFS.'}
+  ],
+  specs:[
+   ['Model','GFE28GYNIFS'],['Serial','RT533964'],['Configuration','French-door refrigerator'],['Refrigerant','R600a'],['Water filter','RPWFE'],['Fresh-food fan motor','WR60X35205'],['Temperature sensor','WR55X11153'],['Dual water valve','WR57X10098'],['Ice bucket & crusher','WR30X10174']
+  ],
+  repair:[
+   ['Water filter','RPWFE'],
+   ['Water filter bypass plug','WR01X29059'],
+   ['Fresh-food fan motor','WR60X35205'],
+   ['Temperature sensor','WR55X11153'],
+   ['Dual water valve','WR57X10098'],
+   ['Ice bucket & crusher','WR30X10174'],
+   ['Fresh-food heater & harness','WR55X36090'],
+   ['Fresh-food evaporator','WR87X36103 (replacement shown by GE)']
+  ]
+ },
+ 'GE Dishwasher':{
+  manuals:[
+   {title:'GE Dishwasher Owner Support / Manual',url:'https://products.geappliances.com/appliance/gea-specs/GDP670SYVFS/support',note:'GE manufacturer support page for GDP670SYVFS family.'},
+   {title:'GE Dishwasher Installation Instructions',url:'https://products.geappliances.com/appliance/gea-specs/GDP670SYVFS/install',note:'GE installation and setup resource.'}
+  ],
+  specs:[
+   ['Model','GDP670SYV1FS'],['Serial','SA860633B'],['Configuration','Top-control stainless-interior dishwasher'],['Maintenance focus','Clean filters, inspect spray arms, check door seal, clean sump area']
+  ],
+  repair:[
+   ['Fine filter / basket','WD12X25995'],
+   ['Coarse filter','WD22X25465'],
+   ['Lower spray arm','WD22X33499'],
+   ['Other pump/heater/rack parts','Use GE exact-model exploded parts diagram before purchase']
+  ]
+ },
+ 'GE Top Load Washer':{
+  manuals:[
+   {title:'GE Exact Model Parts / Owner Manual',url:'https://www.geapplianceparts.com/store/parts/assembly/PTW600BSR1WS',note:'GE page includes Product Specifications, Owner’s Manual, Installation Instructions and exploded parts diagrams.'}
+  ],
+  specs:[
+   ['Model','PTW600BSR1WS'],['Serial','GA978895G'],['Capacity','5.0 cu. ft. class'],['Main control','WH22X33178'],['Mode shifter','WH03X30517'],['Drain pump','WH23X28418'],['Water valve assembly','WH13X26637']
+  ],
+  repair:[
+   ['Main control board','WH22X33178'],
+   ['Mode shifter','WH03X30517'],
+   ['Drain pump assembly','WH23X28418'],
+   ['Quad water valve assembly','WH13X26637'],
+   ['Motor pulley & nut','WH03X33317'],
+   ['Transmission pulley & nut','WH03X32097'],
+   ['Speed sensor','WH03X32158'],
+   ['Drive belt','Verify exact current GE part number from exact-model diagram before purchase']
+  ]
+ },
+ 'Maytag Microwave':{
+  manuals:[
+   {title:'Maytag MMV4205FZ Owner Center',url:'https://www.maytag.com/owners-center-pdp.MMV4205FZ.html',note:'Maytag manufacturer owner resources for MMV4205FZ family.'}
+  ],
+  specs:[
+   ['Model','MMV4205FZ-0'],['Serial','TR 6 26 11072'],['Manufactured','June 2016'],['Grease filter','W10208631A'],['Charcoal filter','8206230A'],['Cooktop light bulb','8206232A / 40 W']
+  ],
+  repair:[
+   ['Grease filter','W10208631A'],
+   ['Charcoal filter','8206230A'],
+   ['40 W light bulb','8206232A'],
+   ['Other electrical / high-voltage parts','Service-only; verify exact OEM before repair']
+  ]
+ },
+ 'Electric Double-Oven Range':{
+  manuals:[],
+  specs:[['Model','Pending'],['Serial','Pending'],['Next step','Enter model/serial from rating label to unlock exact manual and parts catalog']],
+  repair:[]
+ },
+ 'BUNN Coffee Maker':{
+  manuals:[{title:'BUNN Product Manuals',url:'https://retail.bunn.com/support/product-manuals',note:'Manufacturer manual lookup; exact model still needed.'}],
+  specs:[['Model','Pending'],['Serial','Pending'],['Next step','Enter exact model from bottom/back data label']],
+  repair:[]
+ }
+});
+
 function collectedParts(assetName){
  const out=[],seen=new Set();
  tasks.filter(t=>t.asset===assetName).forEach(t=>(t.parts||[]).forEach(p=>{
@@ -706,7 +863,7 @@ function renderDetailTab(tab){
   $('detailSpecs').classList.remove('hidden');
   const base=[['Make / Brand',a.make||'—'],['Model',a.model||'—'],['Year',a.year||'—'],['VIN / Serial',a.serial||'—']];
   const specs=base.concat(lib.specs||[]);
-  $('detailSpecs').innerHTML=`<div class="spec-grid">${specs.map(s=>`<div class="spec-card"><b>${esc(s[0])}</b><span>${esc(s[1])}</span></div>`).join('')}</div>${a.notes?`<div class="spec-card"><h4>Notes</h4>${esc(a.notes)}</div>`:''}`;
+  $('detailSpecs').innerHTML=`<div class="spec-grid">${specs.map(s=>`<div class="spec-card"><b>${esc(s[0])}</b><span>${esc(s[1])}</span></div>`).join('')}</div>${a.notes?`<div class="spec-card"><h4>Notes</h4>${esc(a.notes)}</div>`:''}${lib.repair&&lib.repair.length?`<div class="spec-card"><h4>Common Repair Parts</h4>${lib.repair.map(r=>`<div class="part-view"><b>${esc(r[0])}</b> · ${esc(r[1])}</div>`).join('')}</div>`:''}`;
  }
 }
 window.openEquipmentDetail=(id,tab='parts')=>{
