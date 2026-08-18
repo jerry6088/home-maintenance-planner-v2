@@ -974,7 +974,33 @@ function render(){
  }
 }
 function updateMeterVisibility(type){$('meterFields').classList.toggle('hidden',type==='home')}
-document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));$(b.dataset.view).classList.remove('hidden')});
+
+const pageMeta={
+ maintenance:['HOME & PROPERTY','Dashboard','Everything that needs attention, grouped and prioritized.'],
+ vehicles:['FLEET','Vehicles','Mileage-based maintenance, OEM parts, manuals and service history.'],
+ power:['EQUIPMENT','Power Equipment','Hours-based maintenance for mowers, UTVs, tractors and outdoor equipment.'],
+ home:['HOME SYSTEMS','Home Equipment','Appliances, HVAC, manuals, parts and calendar maintenance.']
+};
+function setPageMeta(view){
+ const m=pageMeta[view]||pageMeta.maintenance;
+ $('pageEyebrow').textContent=m[0];$('pageTitle').textContent=m[1];$('pageSubtitle').textContent=m[2];
+}
+function closeSidebar(){
+ $('sidebar').classList.remove('open');$('sidebarBackdrop').classList.remove('show');
+}
+function openSidebar(){
+ $('sidebar').classList.add('open');$('sidebarBackdrop').classList.add('show');
+}
+function showMainView(view){
+ document.querySelectorAll('#tabs button[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===view));
+ document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));
+ $(view).classList.remove('hidden');
+ setPageMeta(view);
+ closeSidebar();
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+
+document.querySelectorAll('#tabs button[data-view]').forEach(b=>b.onclick=()=>showMainView(b.dataset.view));
 window.editAsset=id=>{let a=assets.find(x=>x.id===id);['name','year','type','make','model','serial','meter','meterType','notes'].forEach(k=>$(k).value=a[k]??'');$('assetId').value=id;updateMeterVisibility(a.type);$('assetDialog').showModal()};
 $('addBtn').onclick=()=>{['assetId','name','year','make','model','serial','meter','notes'].forEach(k=>$(k).value='');$('type').value='power';$('meterType').value='hours';updateMeterVisibility('power');$('assetDialog').showModal()};
 $('type').onchange=()=>updateMeterVisibility($('type').value);
@@ -1003,4 +1029,20 @@ document.querySelectorAll('[data-status-filter]').forEach(b=>b.onclick=()=>{
  currentStatusFilter=b.dataset.statusFilter;
  render();
 });
+
+$('mobileMenu').onclick=openSidebar;
+$('mobileClose').onclick=closeSidebar;
+$('sidebarBackdrop').onclick=closeSidebar;
+$('sidebarAddBtn').onclick=()=>$('addBtn').click();
+$('sidebarDashboardBtn').onclick=()=>showMainView('maintenance');
+$('seasonNavBtn').onclick=()=>{
+ showMainView('maintenance');
+ setTimeout(()=>document.querySelector('.season-tabs')?.closest('.dashboard-panel')?.scrollIntoView({behavior:'smooth',block:'start'}),80);
+};
+$('historyNavBtn').onclick=()=>{
+ showMainView('maintenance');
+ setTimeout(()=>$('recentHistory')?.closest('.dashboard-panel')?.scrollIntoView({behavior:'smooth',block:'start'}),80);
+};
+setPageMeta('maintenance');
+
 render();

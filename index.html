@@ -7,18 +7,39 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-  <div><small>HOME & PROPERTY</small><h1>Maintenance Planner V2</h1>
-  <p>Maintenance, vehicles, power equipment, and home equipment in one place.</p></div>
+<div class="app-shell">
+<aside id="sidebar" class="sidebar">
+  <div class="brand">
+    <button id="mobileClose" class="sidebar-close" type="button">✕</button>
+    <div class="brand-mark">HM</div>
+    <div><small>HOME & PROPERTY</small><h1>Maintenance Planner</h1></div>
+  </div>
+
+  <nav id="tabs" class="side-nav">
+    <button data-view="maintenance" class="active"><span class="nav-icon">▦</span><span>Dashboard</span></button>
+    <button data-view="vehicles"><span class="nav-icon">🚙</span><span>Vehicles</span></button>
+    <button data-view="power"><span class="nav-icon">⚙</span><span>Power Equipment</span></button>
+    <button data-view="home"><span class="nav-icon">⌂</span><span>Home Equipment</span></button>
+    <button id="seasonNavBtn" type="button"><span class="nav-icon">☀</span><span>Seasonal Maintenance</span></button>
+    <button id="historyNavBtn" type="button"><span class="nav-icon">↺</span><span>History</span></button>
+  </nav>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">QUICK ACTIONS</div>
+    <button id="sidebarAddBtn" class="quick-action" type="button">＋ Add Equipment</button>
+    <button id="sidebarDashboardBtn" class="quick-action secondary-quick" type="button">▦ Dashboard</button>
+  </div>
+</aside>
+
+<div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+<div class="main-shell">
+<header class="topbar">
+  <button id="mobileMenu" class="mobile-menu" type="button">☰</button>
+  <div><small id="pageEyebrow">HOME & PROPERTY</small><h2 id="pageTitle">Dashboard</h2><p id="pageSubtitle">Everything that needs attention, grouped and prioritized.</p></div>
   <button id="addBtn">+ Add Item</button>
 </header>
 <main>
-<nav id="tabs">
-<button data-view="maintenance" class="active">Dashboard</button>
-<button data-view="vehicles">Vehicles</button>
-<button data-view="power">Power Equipment</button>
-<button data-view="home">Home Equipment</button>
-</nav>
 
 <section id="maintenance" class="view">
 <div class="stats dashboard-stats">
@@ -66,6 +87,8 @@
 <section id="power" class="view hidden"><h2>Power Equipment</h2><div id="powerList" class="grid"></div></section>
 <section id="home" class="view hidden"><h2>Home Equipment</h2><div id="homeList" class="grid"></div></section>
 </main>
+</div>
+</div>
 
 <dialog id="assetDialog"><form id="assetForm">
 <h2>Edit Equipment</h2><input type="hidden" id="assetId">
