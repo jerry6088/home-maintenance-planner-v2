@@ -105,3 +105,10 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
  .topbar{padding:14px 16px}
  main{padding:18px 14px}
 }
+
+.assignee-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;background:#eef3ff;color:#2146d0;font-size:12px;font-weight:800;margin-top:6px}
+.assignee-chip.unassigned{background:#f0f2f5;color:#68748a}
+.people-mini-list{display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 12px}
+.people-mini-list span{font-size:11px;background:#ffffff18;border:1px solid #ffffff24;color:white;border-radius:999px;padding:5px 8px}
+.toolbar.compact select#assigneeFilter{min-width:140px}
+.season-assignee{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:12px;font-weight:800;color:#2146d0}

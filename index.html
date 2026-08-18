@@ -25,7 +25,7 @@
   </nav>
 
   <div class="sidebar-section">
-    <div class="sidebar-label">QUICK ACTIONS</div>
+    <div class="sidebar-label">PEOPLE</div><div id="peopleMiniList" class="people-mini-list"></div><div class="sidebar-label">QUICK ACTIONS</div>
     <button id="sidebarAddBtn" class="quick-action" type="button">＋ Add Equipment</button>
     <button id="sidebarDashboardBtn" class="quick-action secondary-quick" type="button">▦ Dashboard</button>
   </div>
@@ -76,7 +76,7 @@
 <section class="dashboard-panel">
 <div class="section-title-row">
   <div><small>MAINTENANCE</small><h2>Maintenance by Equipment</h2></div>
-  <div class="toolbar compact"><input id="search" placeholder="Search tasks, parts, equipment..."><select id="assetFilter"><option value="">All equipment</option></select></div>
+  <div class="toolbar compact"><input id="search" placeholder="Search tasks, parts, equipment..."><select id="assetFilter"><option value="">All equipment</option></select><select id="assigneeFilter"><option value="">Everyone</option></select></div>
 </div>
 <div id="equipmentGroups" class="equipment-groups"></div>
 </section>
@@ -105,7 +105,7 @@
 <dialog id="taskDialog"><form id="taskForm">
 <h2>Maintenance Task</h2><input type="hidden" id="taskId">
 <label>Task<input id="taskName" required></label>
-<label>Equipment<select id="taskAsset"></select></label>
+<label>Equipment<select id="taskAsset"></select></label><label>Assigned To<select id="taskAssignee"></select></label>
 <div class="two"><label>Next due date<input id="dueDate" type="date"></label><label>Repeat months<input id="months" type="number" min="0"></label></div>
 <div id="meterIntervals" class="two"><label>Every miles<input id="miles" type="number" min="0"></label><label>Every hours<input id="hours" type="number" min="0"></label></div>
 <label>Factory / service notes<textarea id="taskNotes"></textarea></label>

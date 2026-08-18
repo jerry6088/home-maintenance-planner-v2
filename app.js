@@ -904,10 +904,17 @@ function seasonalDoneThisCycle(x){
  const months=(now.getFullYear()-d.getFullYear())*12+(now.getMonth()-d.getMonth());
  return months<(x.months||12);
 }
+
+window.assignSeasonal=function(id,person){
+ const x=seasonal.find(s=>s.id===id);if(!x)return;
+ x.assignee=person||'';
+ localStorage.setItem(SK,JSON.stringify(seasonal));
+};
+
 window.completeSeasonal=function(id){
  const x=seasonal.find(s=>s.id===id);if(!x)return;
  x.lastDone=new Date().toISOString().slice(0,10);
- history.push({id:uid(),asset:'Home / Seasonal',task:x.name,date:x.lastDone,meter:'',meterType:'',cost:'',notes:x.season+' seasonal maintenance completed'});
+ history.push({id:uid(),asset:'Home / Seasonal',task:x.name,assignee:x.assignee||'',date:x.lastDone,meter:'',meterType:'',cost:'',notes:x.season+' seasonal maintenance completed'});
  localStorage.setItem(SK,JSON.stringify(seasonal));
  localStorage.setItem(HK,JSON.stringify(history));
  render();
@@ -915,25 +922,52 @@ window.completeSeasonal=function(id){
 function renderSeasonal(){
  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active',b.dataset.season===seasonalFilter));
  const list=seasonal.filter(x=>seasonalFilter==='All'||x.season===seasonalFilter);
- $('seasonalList').innerHTML=list.map(x=>`<article class="season-item ${seasonalDoneThisCycle(x)?'done':''}"><div><div class="season-name">${esc(x.name)}</div><div class="season-meta">${esc(x.season)}${x.lastDone?` · Last completed ${esc(x.lastDone)}`:''}</div><p>${esc(x.notes)}</p></div><div class="season-actions"><button onclick="completeSeasonal('${x.id}')">${seasonalDoneThisCycle(x)?'✓ Completed':'✓ Complete'}</button></div></article>`).join('');
+ $('seasonalList').innerHTML=list.map(x=>`<article class="season-item ${seasonalDoneThisCycle(x)?'done':''}"><div><div class="season-name">${esc(x.name)}</div><div class="season-meta">${esc(x.season)}${x.lastDone?` · Last completed ${esc(x.lastDone)}`:''}</div><p>${esc(x.notes)}</p></div><div class="season-actions"><select onchange="assignSeasonal('${x.id}',this.value)"><option value="">Unassigned</option>${PEOPLE.map(p=>`<option value="${esc(p)}" ${x.assignee===p?'selected':''}>${esc(p)}</option>`).join('')}</select><button onclick="completeSeasonal('${x.id}')">${seasonalDoneThisCycle(x)?'✓ Completed':'✓ Complete'}</button></div></article>`).join('');
 }
 function historyRows(assetName,limit){
  const rows=history.filter(h=>!assetName||h.asset===assetName).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,limit||999);
- return rows.length?rows.map(h=>`<div class="history-row"><strong>${esc(h.task||h.name||'Maintenance')}</strong><div class="history-meta">${esc(h.date||'')}${h.asset?` · ${esc(h.asset)}`:''}${h.meter!==''&&h.meter!=null?` · ${esc(String(h.meter))}${h.meterType?` ${esc(h.meterType)}`:''}`:''}${h.cost?` · $${Number(h.cost).toFixed(2)}`:''}</div>${h.notes?`<div>${esc(h.notes)}</div>`:''}</div>`).join(''):'<p class="muted">No completed maintenance recorded yet.</p>';
+ return rows.length?rows.map(h=>`<div class="history-row"><strong>${esc(h.task||h.name||'Maintenance')}</strong><div class="history-meta">${esc(h.date||'')}${h.asset?` · ${esc(h.asset)}`:''}${h.assignee?` · Assigned: ${esc(h.assignee)}`:''}${h.meter!==''&&h.meter!=null?` · ${esc(String(h.meter))}${h.meterType?` ${esc(h.meterType)}`:''}`:''}${h.cost?` · $${Number(h.cost).toFixed(2)}`:''}</div>${h.notes?`<div>${esc(h.notes)}</div>`:''}</div>`).join(''):'<p class="muted">No completed maintenance recorded yet.</p>';
+}
+
+
+const PEOPLE=['Jerry','Ashley','Jack','Jace','Wesley','Waylon','Roger'];
+const ASSIGNEE_MIG='hmv2-assignees-v1';
+if(localStorage.getItem(ASSIGNEE_MIG)!=='1'){
+  tasks.forEach(t=>{if(typeof t.assignee!=='string')t.assignee='';});
+  if(typeof seasonal!=='undefined' && Array.isArray(seasonal)){
+    seasonal.forEach(s=>{if(typeof s.assignee!=='string')s.assignee='';});
+    localStorage.setItem(SK,JSON.stringify(seasonal));
+  }
+  localStorage.setItem(TK,JSON.stringify(tasks));
+  localStorage.setItem(ASSIGNEE_MIG,'1');
+}
+function assigneeChip(name){
+ return name?`<span class="assignee-chip">👤 ${esc(name)}</span>`:`<span class="assignee-chip unassigned">Unassigned</span>`;
+}
+function populateAssigneeSelect(selectId,selected=''){
+ const el=$(selectId); if(!el)return;
+ el.innerHTML='<option value="">Unassigned</option>'+PEOPLE.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+ el.value=selected||'';
 }
 
 let currentStatusFilter='all';
 function render(){
  renderAssets('vehicle','vehiclesList');renderAssets('power','powerList');renderAssets('home','homeList');
  const prev=$('assetFilter').value;
+ const prevAssignee=$('assigneeFilter')?.value||'';
  $('assetFilter').innerHTML='<option value="">All equipment</option>'+assets.map(a=>`<option>${esc(a.name)}</option>`).join('');
  $('assetFilter').value=prev;
+ if($('assigneeFilter')){
+   $('assigneeFilter').innerHTML='<option value="">Everyone</option>'+PEOPLE.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+   $('assigneeFilter').value=prevAssignee;
+ }
+ $('peopleMiniList').innerHTML=PEOPLE.map(p=>`<span>${esc(p)}</span>`).join('');
  $('equipmentTotal').textContent=assets.length;
  renderSeasonal();
  $('recentHistory').innerHTML=historyRows(null,8);
 
- const q=$('search').value.toLowerCase(),f=$('assetFilter').value;
- const baseFiltered=tasks.filter(t=>(!f||t.asset===f)&&(`${t.name} ${t.asset} ${t.notes} ${(t.parts||[]).map(p=>Object.values(p).join(' ')).join(' ')}`).toLowerCase().includes(q));
+ const q=$('search').value.toLowerCase(),f=$('assetFilter').value,person=$('assigneeFilter')?.value||'';
+ const baseFiltered=tasks.filter(t=>(!f||t.asset===f)&&(!person||t.assignee===person)&&(`${t.name} ${t.asset} ${t.assignee||''} ${t.notes} ${(t.parts||[]).map(p=>Object.values(p).join(' ')).join(' ')}`).toLowerCase().includes(q));
  const allFiltered=baseFiltered.filter(t=>{
    if(currentStatusFilter==='all')return true;
    const u=taskUrgency(t);
@@ -944,7 +978,7 @@ function render(){
  }).sort(taskSort);
 
  const attention=allFiltered.filter(t=>taskUrgency(t)<=1);
- $('attentionList').innerHTML=attention.map(t=>`<article class="attention-item ${urgencyClass(t)}"><div><div class="status-label ${urgencyClass(t)}">${urgencyLabel(t)}</div><strong>${esc(t.name)}</strong><div class="attention-meta">${esc(t.asset)}${t.dueDate?` · Due ${esc(t.dueDate)}`:''}</div>${partsHTML(t)}</div><div class="attention-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button onclick="editTask('${t.id}')">Edit</button></div></article>`).join('');
+ $('attentionList').innerHTML=attention.map(t=>`<article class="attention-item ${urgencyClass(t)}"><div><div class="status-label ${urgencyClass(t)}">${urgencyLabel(t)}</div><strong>${esc(t.name)}</strong><div class="attention-meta">${esc(t.asset)}${t.dueDate?` · Due ${esc(t.dueDate)}`:''}</div>${assigneeChip(t.assignee)}${partsHTML(t)}</div><div class="attention-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button onclick="editTask('${t.id}')">Edit</button></div></article>`).join('');
  $('attentionEmpty').classList.toggle('hidden',attention.length>0);
 
  const grouped=assets.map(a=>({asset:a,tasks:allFiltered.filter(t=>t.asset===a.name)})).filter(g=>g.tasks.length||(!q&&!f));
@@ -954,7 +988,7 @@ function render(){
    const sorted=g.tasks.slice().sort(taskSort);
    const meter=(g.asset.type!=='home'&&g.asset.meter!=='')?`${g.asset.meter} ${g.asset.meterType}`:'';
    const shouldOpen=overdue>0||soon>0||Boolean(f);
-   return `<details class="equipment-group" ${shouldOpen?'open':''}><summary><div class="group-title"><span>${assetIcon(g.asset)}</span><div><h3>${esc(g.asset.name)}</h3><div class="group-meta">${esc([g.asset.year,g.asset.make,g.asset.model].filter(Boolean).join(' '))}${meter?` · ${esc(meter)}`:''}</div></div></div><div class="group-badges">${overdue?`<span class="badge">${overdue} overdue</span>`:''}${soon?`<span class="badge">${soon} due soon</span>`:''}<span class="badge">${g.tasks.length} tasks</span></div></summary><div class="group-body">${sorted.length?sorted.map(t=>`<article class="group-task ${urgencyClass(t)}"><div class="group-task-main"><div class="status-label ${urgencyClass(t)}">${urgencyLabel(t)}</div><strong>${esc(t.name)}</strong>${t.dueDate?`<div class="muted">Due ${esc(t.dueDate)}</div>`:''}<p>${esc(t.notes||'')}</p>${partsHTML(t)}${historyHTML(t)}</div><div class="group-task-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button onclick="editTask('${t.id}')">Edit</button></div></article>`).join(''):'<p class="muted">No maintenance tasks match the current filter.</p>'}</div></details>`;
+   return `<details class="equipment-group" ${shouldOpen?'open':''}><summary><div class="group-title"><span>${assetIcon(g.asset)}</span><div><h3>${esc(g.asset.name)}</h3><div class="group-meta">${esc([g.asset.year,g.asset.make,g.asset.model].filter(Boolean).join(' '))}${meter?` · ${esc(meter)}`:''}</div></div></div><div class="group-badges">${overdue?`<span class="badge">${overdue} overdue</span>`:''}${soon?`<span class="badge">${soon} due soon</span>`:''}<span class="badge">${g.tasks.length} tasks</span></div></summary><div class="group-body">${sorted.length?sorted.map(t=>`<article class="group-task ${urgencyClass(t)}"><div class="group-task-main"><div class="status-label ${urgencyClass(t)}">${urgencyLabel(t)}</div><strong>${esc(t.name)}</strong>${t.dueDate?`<div class="muted">Due ${esc(t.dueDate)}</div>`:''}${assigneeChip(t.assignee)}<p>${esc(t.notes||'')}</p>${partsHTML(t)}${historyHTML(t)}</div><div class="group-task-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button onclick="editTask('${t.id}')">Edit</button></div></article>`).join(''):'<p class="muted">No maintenance tasks match the current filter.</p>'}</div></details>`;
  }).join('');
 
  $('taskList').innerHTML='';
@@ -1011,16 +1045,17 @@ function partRow(p={}){const div=document.createElement('div');div.className='pa
 $('addPartBtn').onclick=()=>$('partsEditor').appendChild(partRow());
 function collectParts(){return [...$('partsEditor').children].map(r=>{let o={};r.querySelectorAll('[data-k]').forEach(i=>o[i.dataset.k]=i.value.trim());return o}).filter(p=>p.description||p.oem||p.aftermarket||p.notes)}
 
-window.editTask=id=>{let t=ensureParts(tasks.find(x=>x.id===id));$('taskId').value=id;$('taskName').value=t.name;$('taskAsset').innerHTML=assets.map(a=>`<option>${esc(a.name)}</option>`).join('');$('taskAsset').value=t.asset;$('dueDate').value=t.dueDate||'';$('months').value=t.months||0;$('miles').value=t.miles||0;$('hours').value=t.hours||0;$('taskNotes').value=t.notes||'';$('meterIntervals').classList.toggle('hidden',isHomeAsset(t.asset));$('partsEditor').innerHTML='';t.parts.forEach(p=>$('partsEditor').appendChild(partRow(p)));$('taskDialog').showModal()};
+window.editTask=id=>{let t=ensureParts(tasks.find(x=>x.id===id));$('taskId').value=id;$('taskName').value=t.name;$('taskAsset').innerHTML=assets.map(a=>`<option>${esc(a.name)}</option>`).join('');$('taskAsset').value=t.asset;$('dueDate').value=t.dueDate||'';$('months').value=t.months||0;$('miles').value=t.miles||0;$('hours').value=t.hours||0;$('taskNotes').value=t.notes||'';populateAssigneeSelect('taskAssignee',t.assignee||'');$('meterIntervals').classList.toggle('hidden',isHomeAsset(t.asset));$('partsEditor').innerHTML='';t.parts.forEach(p=>$('partsEditor').appendChild(partRow(p)));$('taskDialog').showModal()};
 $('taskAsset').onchange=()=>$('meterIntervals').classList.toggle('hidden',isHomeAsset($('taskAsset').value));
-$('taskForm').onsubmit=e=>{e.preventDefault();let id=$('taskId').value,home=isHomeAsset($('taskAsset').value),obj={id,asset:$('taskAsset').value,name:$('taskName').value,dueDate:$('dueDate').value,months:+$('months').value||0,miles:home?0:(+$('miles').value||0),hours:home?0:(+$('hours').value||0),notes:$('taskNotes').value,parts:collectParts()};tasks=tasks.map(t=>t.id===id?obj:t);$('taskDialog').close();save()};
+$('taskForm').onsubmit=e=>{e.preventDefault();let id=$('taskId').value,home=isHomeAsset($('taskAsset').value),obj={id,asset:$('taskAsset').value,name:$('taskName').value,dueDate:$('dueDate').value,months:+$('months').value||0,miles:home?0:(+$('miles').value||0),hours:home?0:(+$('hours').value||0),notes:$('taskNotes').value,assignee:$('taskAssignee').value||'',parts:collectParts()};tasks=tasks.map(t=>t.id===id?obj:t);$('taskDialog').close();save()};
 $('cancelTask').onclick=()=>$('taskDialog').close();
 
 window.completeTask=id=>{const t=tasks.find(x=>x.id===id),a=assetByName(t.asset);$('completeTaskId').value=id;$('completeTitle').textContent=`${t.name} — ${t.asset}`;$('completedDate').value=todayISO();$('completedCost').value='';$('completedNotes').value='';$('completedMeter').value=(a&&a.type!=='home')?a.meter||'':'';$('completeMeterWrap').classList.toggle('hidden',!a||a.type==='home');$('completeDialog').showModal()};
-$('completeForm').onsubmit=e=>{e.preventDefault();const id=$('completeTaskId').value,t=tasks.find(x=>x.id===id),a=assetByName(t.asset);const date=$('completedDate').value, meter=(a&&a.type!=='home')?$('completedMeter').value:'';history.push({id:uid(),taskId:id,date,cost:$('completedCost').value,meter,meterType:a?.meterType||'',notes:$('completedNotes').value});if(a&&a.type!=='home'&&meter!=='')a.meter=meter;if(t.months)t.dueDate=addMonths(date,t.months);else if(!t.dueDate)t.dueDate='';t.lastCompleted=date;t.lastCompletedMeter=meter;t.nextDueMeterMiles=(a?.meterType==='miles'&&t.miles&&meter!=='')?(+meter+t.miles):'';t.nextDueMeterHours=(a?.meterType==='hours'&&t.hours&&meter!=='')?(+meter+t.hours):'';$('completeDialog').close();save()};
+$('completeForm').onsubmit=e=>{e.preventDefault();const id=$('completeTaskId').value,t=tasks.find(x=>x.id===id),a=assetByName(t.asset);const date=$('completedDate').value, meter=(a&&a.type!=='home')?$('completedMeter').value:'';history.push({id:uid(),taskId:id,task:t.name,asset:t.asset,assignee:t.assignee||'',date,cost:$('completedCost').value,meter,meterType:a?.meterType||'',notes:$('completedNotes').value});if(a&&a.type!=='home'&&meter!=='')a.meter=meter;if(t.months)t.dueDate=addMonths(date,t.months);else if(!t.dueDate)t.dueDate='';t.lastCompleted=date;t.lastCompletedMeter=meter;t.nextDueMeterMiles=(a?.meterType==='miles'&&t.miles&&meter!=='')?(+meter+t.miles):'';t.nextDueMeterHours=(a?.meterType==='hours'&&t.hours&&meter!=='')?(+meter+t.hours):'';$('completeDialog').close();save()};
 $('cancelComplete').onclick=()=>$('completeDialog').close();
 $('search').oninput=render;
 $('assetFilter').onchange=render;
+$('assigneeFilter').onchange=render;
 
 $('closeDetail').onclick=()=>$('equipmentDetailDialog').close();
 document.querySelectorAll('[data-detail-tab]').forEach(b=>b.onclick=()=>renderDetailTab(b.dataset.detailTab));
