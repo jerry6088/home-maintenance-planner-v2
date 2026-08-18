@@ -503,6 +503,98 @@ if(localStorage.getItem(MIG)!=='1'){
  localStorage.setItem(KEY,'1');
 })();
 
+
+// Vehicle OEM Update 1 — Expedition, F-150, Passat, Chevy starter.
+(function(){
+ const KEY='hmv2-vehicle-oem-update-1';
+ if(localStorage.getItem(KEY)==='1') return;
+ const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const find=(asset,keywords)=>tasks.find(t=>norm(t.asset)===norm(asset)&&keywords.map(norm).every(k=>norm(t.name).includes(k)));
+ const ensure=(asset,name,keywords,data={})=>{
+   let t=find(asset,keywords);
+   if(!t){t={id:uid(),asset,name,dueDate:'',months:0,miles:0,hours:0,notes:'',parts:[]};tasks.push(t)}
+   Object.assign(t,data); if(!Array.isArray(t.parts))t.parts=[]; return t;
+ };
+ const set=(asset,name,keywords,data,parts)=>{const t=ensure(asset,name,keywords,data); if(parts)t.parts=parts; return t;};
+
+ // 2021 Ford Expedition MAX XLT 3.5L GTDI
+ let a=assets.find(x=>x.name==='2021 Ford Expedition');
+ if(a){a.model='Expedition MAX XLT';a.notes=(a.notes||'')+(a.notes?' ':'')+'VIN decodes to 3.5L GTDI V6, 4WD, 10-speed automatic.';}
+ set('2021 Ford Expedition','Engine oil & filter',['oil'],{
+   months:12,miles:10000,notes:'Ford: follow Intelligent Oil-Life Monitor; do not exceed 1 year / 10,000 mi between oil services.'
+ },[
+   {description:'Engine oil filter',oem:'FL-500-S',qty:'1',aftermarket:'',notes:'Motorcraft factory service part.'},
+   {description:'Engine oil',oem:'Motorcraft oil meeting Ford specification',qty:'Verify exact 3.5L capacity before service',aftermarket:'',notes:'Use viscosity/spec listed in 2021 owner manual.'}
+ ]);
+ set('2021 Ford Expedition','Cabin air filter',['cabin'],{miles:20000,notes:'Ford factory interval: replace every 20,000 mi.'},[
+   {description:'Cabin air filter',oem:'FP-92',qty:'1',aftermarket:'',notes:'Motorcraft part listed for 2021 Expedition.'}
+ ]);
+ set('2021 Ford Expedition','Engine air filter',['air'],{miles:30000,notes:'Ford factory interval: replace every 30,000 mi.'},[
+   {description:'Engine air filter',oem:'FA-1883',qty:'1',aftermarket:'',notes:'Motorcraft part listed for 2021 Expedition.'}
+ ]);
+ set('2021 Ford Expedition','Spark plugs',['spark'],{miles:100000,notes:'Ford factory interval: replace every 100,000 mi.'},[
+   {description:'Spark plug',oem:'SP-594',qty:'6',aftermarket:'',notes:'Motorcraft part listed for 2021 Expedition.'}
+ ]);
+ set('2021 Ford Expedition','Brake fluid',['brake','fluid'],{months:36,notes:'Ford factory interval: change brake fluid every 3 years.'},[
+   {description:'Brake fluid',oem:'Motorcraft / Ford specified brake fluid',qty:'As required',aftermarket:'',notes:'Verify exact Ford specification on reservoir/owner manual before service.'}
+ ]);
+ set('2021 Ford Expedition','Automatic transmission fluid',['transmission'],{miles:150000,notes:'Ford factory interval: change automatic transmission fluid at 150,000 mi.'},[]);
+ set('2021 Ford Expedition','Front axle fluid',['front','axle'],{miles:150000,notes:'Ford factory interval: change front axle fluid at 150,000 mi on 4WD vehicles.'},[]);
+ set('2021 Ford Expedition','Rear axle fluid',['rear','axle'],{miles:150000,notes:'Ford factory interval: change rear axle fluid at 150,000 mi.'},[]);
+ set('2021 Ford Expedition','Transfer case fluid',['transfer'],{miles:150000,notes:'Ford factory interval: change transfer case fluid at 150,000 mi on 4WD vehicles.'},[]);
+ set('2021 Ford Expedition','Accessory drive belt',['belt'],{miles:100000,notes:'Inspect at 100,000 mi; after initial inspection, inspect every other oil change until replaced. Replace by 150,000 mi.'},[]);
+ set('2021 Ford Expedition','Engine coolant',['coolant'],{months:120,miles:200000,notes:'Ford initial coolant replacement: 10 years / 200,000 mi, then every 5 years / 100,000 mi.'},[]);
+
+ // 2002 Ford F-150 VIN L = 5.4L SOHC V8 gas
+ a=assets.find(x=>x.name==='2002 Ford F-150');
+ if(a){a.notes=(a.notes||'')+(a.notes?' ':'')+'VIN engine code L = 5.4L SOHC V8 gasoline.';}
+ set('2002 Ford F-150','Engine oil & filter',['oil'],{months:6,miles:5000,notes:'Use the owner-manual interval appropriate to driving conditions; this task is set conservatively at 5,000 mi / 6 months.'},[
+   {description:'Engine oil filter',oem:'FL-820-S',qty:'1',aftermarket:'',notes:'Motorcraft; 2002 F-150 5.4L owner manual.'},
+   {description:'Engine oil',oem:'Motorcraft SAE 5W-20',qty:'6.0 qt with filter',aftermarket:'',notes:'5.4L non-supercharged V8 capacity/specification from 2002 owner manual.'}
+ ]);
+ set('2002 Ford F-150','Engine air filter',['air'],{miles:30000,notes:'Inspect routinely; replace based on restriction/condition and scheduled-maintenance guidance.'},[
+   {description:'Air filter element',oem:'FA-1634',qty:'1',aftermarket:'',notes:'Motorcraft; 2002 F-150 5.4L.'}
+ ]);
+ set('2002 Ford F-150','Fuel filter',['fuel'],{miles:30000,notes:'Periodic fuel-filter replacement; adjust for service history.'},[
+   {description:'Fuel filter',oem:'FG-986B',qty:'1',aftermarket:'',notes:'Motorcraft; 2002 F-150.'}
+ ]);
+ set('2002 Ford F-150','PCV valve',['pcv'],{miles:100000,notes:'Replace per scheduled maintenance/emissions service guidance.'},[
+   {description:'PCV valve',oem:'EV-233',qty:'1',aftermarket:'',notes:'Motorcraft; 5.4L V8.'}
+ ]);
+ set('2002 Ford F-150','Spark plugs',['spark'],{miles:100000,notes:'Replace at major tune-up interval; use only the correct plug for the 5.4L VIN L application and verify VECI gap.'},[
+   {description:'Spark plug',oem:'AGSF-22W',qty:'8',aftermarket:'',notes:'2002 owner manual lists AGSF-22W for 5.4L V8. Verify current supersession before purchase.'}
+ ]);
+
+ // 2014 Volkswagen Passat — OEM data for 1.8T application. Keep explicit verify note.
+ a=assets.find(x=>x.name==='2014 Volkswagen Passat');
+ if(a){a.notes=(a.notes||'')+(a.notes?' ':'')+'OEM service parts below are for the 1.8L turbo gasoline D6J application; verify engine label/PR code before purchase.';}
+ set('2014 Volkswagen Passat','Engine oil & filter',['oil'],{months:12,miles:10000,notes:'VW 1.8T service task. Verify exact engine/PR code before purchasing parts.'},[
+   {description:'Oil filter element with gasket',oem:'06K115562',qty:'1',aftermarket:'',notes:'VW OEM for 1.8L turbo gasoline D6J application.'},
+   {description:'VW-approved engine oil',oem:'VW-approved oil specification',qty:'Verify capacity',aftermarket:'',notes:'Use oil meeting the exact VW spec on the owner/service documentation.'}
+ ]);
+ set('2014 Volkswagen Passat','Spark plugs',['spark'],{miles:40000,notes:'Starter service interval for 1.8T application; verify against exact VW maintenance schedule/engine code.'},[
+   {description:'Spark plug',oem:'06K905601D',qty:'4',aftermarket:'',notes:'VW OEM spark plug for 2014 Passat 1.8L application.'}
+ ]);
+ set('2014 Volkswagen Passat','Engine air filter',['air'],{miles:40000,notes:'Inspect/replace per VW maintenance schedule; exact filter variant may depend on PR code.'},[
+   {description:'Air filter element',oem:'1K0129620D / 1K0129620E',qty:'1',aftermarket:'',notes:'2014 Passat catalog lists multiple variants; confirm installed filter/PR code before purchase.'}
+ ]);
+ set('2014 Volkswagen Passat','Cabin air filter',['cabin'],{miles:20000,notes:'Replace pollen/cabin filter periodically; exact insert variant can depend on equipment.'},[
+   {description:'Dust & pollen filter',oem:'1K0819644B',qty:'1',aftermarket:'',notes:'VW catalog service part; verify equipped filter style.'}
+ ]);
+
+ // 1996 Chevy 1500 — no VIN yet, so do not invent engine-specific parts.
+ set('1996 Chevy 1500','Engine oil & filter',['oil'],{months:3,miles:3000,notes:'1996 GM short-trip/city schedule calls for oil/filter every 3 months or 3,000 mi. Exact filter/oil capacity depends on engine; VIN/engine code still needed.'},[
+   {description:'Oil filter',oem:'VERIFY ENGINE CODE',qty:'1',aftermarket:'',notes:'Need VIN 8th digit or engine size before assigning OEM/ACDelco number.'},
+   {description:'Engine oil',oem:'VERIFY ENGINE CODE',qty:'Verify capacity',aftermarket:'',notes:'Need engine size first.'}
+ ]);
+ set('1996 Chevy 1500','Chassis lubrication',['chassis'],{months:3,miles:3000,notes:'GM schedule calls for chassis lubrication every 3 months / 3,000 mi under short-trip/city schedule.'},[]);
+ set('1996 Chevy 1500','Tire rotation & brake inspection',['tire'],{miles:6000,notes:'Rotate tires and inspect brake components at scheduled intervals.'},[]);
+
+ localStorage.setItem(AK,JSON.stringify(assets));
+ localStorage.setItem(TK,JSON.stringify(tasks));
+ localStorage.setItem(KEY,'1');
+})();
+
 localStorage.setItem(AK,JSON.stringify(assets));localStorage.setItem(TK,JSON.stringify(tasks));localStorage.setItem(HK,JSON.stringify(history));
 
 const $=x=>document.getElementById(x);
