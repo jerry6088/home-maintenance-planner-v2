@@ -119,3 +119,8 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 .undo-btn{background:#fff3f0!important;color:#9a3d2f!important;border:1px solid #efc8c0!important}
 .completed-row{opacity:.7;background:#fafbfc}
 .completed-badge{display:inline-flex;padding:4px 8px;border-radius:999px;background:#eaf7ee;color:#2f7d46;font-size:12px;font-weight:800;margin-top:6px}
+
+.collapse-btn{background:#eef3ff!important;color:#2146d0!important;border:1px solid #cfd9ff!important;min-width:88px}
+.seasonal-panel-body{margin-top:4px}
+.seasonal-panel .section-title-row{margin-bottom:0}
+.seasonal-panel .section-title-row:has(+ .seasonal-panel-body:not(.hidden)){margin-bottom:12px}

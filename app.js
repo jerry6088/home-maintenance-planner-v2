@@ -919,6 +919,15 @@ window.completeSeasonal=function(id){
  localStorage.setItem(HK,JSON.stringify(history));
  render();
 };
+
+function renderSeasonalPanelState(){
+ const body=$('seasonalPanelBody'),btn=$('toggleSeasonalPanel');
+ if(!body||!btn)return;
+ body.classList.toggle('hidden',!seasonalPanelOpen);
+ btn.textContent=seasonalPanelOpen?'Hide':'Show';
+ btn.setAttribute('aria-expanded',seasonalPanelOpen?'true':'false');
+}
+
 function renderSeasonal(){
  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active',b.dataset.season===seasonalFilter));
  const showDone=$('showCompletedSeasonal')?.checked||false;
@@ -1002,6 +1011,7 @@ window.undoSeasonalCompletion=function(id){
  render();
 };
 
+let seasonalPanelOpen=false;
 let currentStatusFilter='all';
 function render(){
  renderAssets('vehicle','vehiclesList');renderAssets('power','powerList');renderAssets('home','homeList');
@@ -1015,7 +1025,8 @@ function render(){
  }
  $('peopleMiniList').innerHTML=PEOPLE.map(p=>`<span>${esc(p)}</span>`).join('');
  $('equipmentTotal').textContent=assets.length;
- renderSeasonal();
+ renderSeasonalPanelState();
+ if(seasonalPanelOpen)renderSeasonal();
  $('recentHistory').innerHTML=historyRows(null,8);
 
  const q=$('search').value.toLowerCase(),f=$('assetFilter').value,person=$('assigneeFilter')?.value||'';
@@ -1109,6 +1120,7 @@ $('search').oninput=render;
 $('assetFilter').onchange=render;
 $('assigneeFilter').onchange=render;
 $('showCompletedSeasonal').onchange=renderSeasonal;
+$('toggleSeasonalPanel').onclick=()=>{seasonalPanelOpen=!seasonalPanelOpen;renderSeasonalPanelState();if(seasonalPanelOpen)renderSeasonal();};
 
 $('closeDetail').onclick=()=>$('equipmentDetailDialog').close();
 document.querySelectorAll('[data-detail-tab]').forEach(b=>b.onclick=()=>renderDetailTab(b.dataset.detailTab));
@@ -1125,7 +1137,10 @@ $('sidebarAddBtn').onclick=()=>$('addBtn').click();
 $('sidebarDashboardBtn').onclick=()=>showMainView('maintenance');
 $('seasonNavBtn').onclick=()=>{
  showMainView('maintenance');
- setTimeout(()=>document.querySelector('.season-tabs')?.closest('.dashboard-panel')?.scrollIntoView({behavior:'smooth',block:'start'}),80);
+ seasonalPanelOpen=true;
+ renderSeasonalPanelState();
+ renderSeasonal();
+ setTimeout(()=>document.querySelector('.seasonal-panel')?.scrollIntoView({behavior:'smooth',block:'start'}),80);
 };
 $('historyNavBtn').onclick=()=>{
  showMainView('maintenance');

@@ -56,8 +56,12 @@
 <p id="attentionEmpty" class="muted">Nothing overdue or due soon.</p>
 </section>
 
-<section class="dashboard-panel">
-<div class="section-title-row"><div><small>HOME</small><h2>Seasonal Home Maintenance</h2></div></div>
+<section class="dashboard-panel seasonal-panel">
+<div class="section-title-row">
+  <div><small>HOME</small><h2>Seasonal Home Maintenance</h2></div>
+  <button id="toggleSeasonalPanel" type="button" class="collapse-btn" aria-expanded="false">Show</button>
+</div>
+<div id="seasonalPanelBody" class="seasonal-panel-body hidden">
 <div class="season-controls"><div class="season-tabs">
 <button type="button" data-season="Spring">Spring</button>
 <button type="button" data-season="Summer">Summer</button>
@@ -66,6 +70,7 @@
 <button type="button" data-season="All" class="active">All</button>
 </div><label class="show-completed-toggle"><input id="showCompletedSeasonal" type="checkbox"> Show completed</label></div>
 <div id="seasonalList" class="seasonal-list"></div>
+</div>
 </section>
 
 <section class="dashboard-panel">
