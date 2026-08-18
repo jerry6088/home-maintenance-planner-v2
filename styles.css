@@ -27,3 +27,13 @@
 .status-label.overdue{color:#a62b2b}.status-label.soon{color:#a66d00}.status-label.upcoming{color:#4c6657}
 @media(max-width:850px){.dashboard-stats{grid-template-columns:1fr 1fr}.section-title-row{align-items:stretch;flex-direction:column}.toolbar.compact{max-width:none}}
 @media(max-width:650px){.dashboard-stats{grid-template-columns:1fr}.attention-item,.group-task{flex-direction:column}.equipment-group summary{align-items:flex-start;flex-direction:column}.group-badges{justify-content:flex-start}}
+
+.stat-card-btn{background:white!important;color:#17231c!important;border:1px solid #dde3de!important;border-radius:12px!important;padding:16px!important;text-align:left!important;transition:.15s ease;box-shadow:none}
+.stat-card-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px #0000000f}
+.stat-card-btn.active{outline:3px solid #183b2a22;border-color:#183b2a!important}
+.stat-card-btn span{display:block;color:#68756d;font-weight:700}
+.stat-card-btn strong{display:block;font-size:30px;margin-top:3px}
+.stat-card-btn.stat-critical strong{color:#9f2f2f}
+.stat-card-btn.stat-warning strong{color:#a66d00}
+.active-filter{display:flex;align-items:center;gap:10px;margin:-6px 0 16px;padding:10px 12px;border-radius:10px;background:#eef3ef;color:#294a37;font-weight:700}
+.active-filter button{margin-left:auto;background:#dfe8e1;color:#294a37;padding:7px 10px}

@@ -22,11 +22,12 @@
 
 <section id="maintenance" class="view">
 <div class="stats dashboard-stats">
-<div class="stat-critical"><span>Overdue</span><strong id="overdue">0</strong></div>
-<div class="stat-warning"><span>Due Soon</span><strong id="soon">0</strong></div>
-<div><span>Upcoming</span><strong id="upcoming">0</strong></div>
-<div><span>Total Equipment</span><strong id="equipmentTotal">0</strong></div>
+<button class="stat-card-btn stat-critical" data-status-filter="overdue"><span>Overdue</span><strong id="overdue">0</strong></button>
+<button class="stat-card-btn stat-warning" data-status-filter="soon"><span>Due Soon</span><strong id="soon">0</strong></button>
+<button class="stat-card-btn" data-status-filter="upcoming"><span>Upcoming</span><strong id="upcoming">0</strong></button>
+<button class="stat-card-btn" data-status-filter="all"><span>Total Equipment</span><strong id="equipmentTotal">0</strong></button>
 </div>
+<div id="activeStatusFilter" class="active-filter hidden"></div>
 
 <section class="dashboard-panel attention-panel">
 <div class="section-title-row"><div><small>PRIORITY</small><h2>Needs Attention</h2></div></div>

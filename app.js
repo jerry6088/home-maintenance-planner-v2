@@ -648,6 +648,7 @@ function assetIcon(a){
  }
  return'⚙️';
 }
+let currentStatusFilter='all';
 function render(){
  renderAssets('vehicle','vehiclesList');renderAssets('power','powerList');renderAssets('home','homeList');
  const prev=$('assetFilter').value;
@@ -656,7 +657,15 @@ function render(){
  $('equipmentTotal').textContent=assets.length;
 
  const q=$('search').value.toLowerCase(),f=$('assetFilter').value;
- const allFiltered=tasks.filter(t=>(!f||t.asset===f)&&(`${t.name} ${t.asset} ${t.notes} ${(t.parts||[]).map(p=>Object.values(p).join(' ')).join(' ')}`).toLowerCase().includes(q)).sort(taskSort);
+ const baseFiltered=tasks.filter(t=>(!f||t.asset===f)&&(`${t.name} ${t.asset} ${t.notes} ${(t.parts||[]).map(p=>Object.values(p).join(' ')).join(' ')}`).toLowerCase().includes(q));
+ const allFiltered=baseFiltered.filter(t=>{
+   if(currentStatusFilter==='all')return true;
+   const u=taskUrgency(t);
+   if(currentStatusFilter==='overdue')return u===0;
+   if(currentStatusFilter==='soon')return u===1;
+   if(currentStatusFilter==='upcoming')return u>=2;
+   return true;
+ }).sort(taskSort);
 
  const attention=allFiltered.filter(t=>taskUrgency(t)<=1);
  $('attentionList').innerHTML=attention.map(t=>`<article class="attention-item ${urgencyClass(t)}"><div><div class="status-label ${urgencyClass(t)}">${urgencyLabel(t)}</div><strong>${esc(t.name)}</strong><div class="attention-meta">${esc(t.asset)}${t.dueDate?` · Due ${esc(t.dueDate)}`:''}</div>${partsHTML(t)}</div><div class="attention-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button onclick="editTask('${t.id}')">Edit</button></div></article>`).join('');
@@ -673,9 +682,20 @@ function render(){
  }).join('');
 
  $('taskList').innerHTML='';
- $('overdue').textContent=allFiltered.filter(t=>taskUrgency(t)===0).length;
- $('soon').textContent=allFiltered.filter(t=>taskUrgency(t)===1).length;
- $('upcoming').textContent=allFiltered.filter(t=>taskUrgency(t)>=2).length;
+ $('overdue').textContent=baseFiltered.filter(t=>taskUrgency(t)===0).length;
+ $('soon').textContent=baseFiltered.filter(t=>taskUrgency(t)===1).length;
+ $('upcoming').textContent=baseFiltered.filter(t=>taskUrgency(t)>=2).length;
+
+ document.querySelectorAll('[data-status-filter]').forEach(b=>b.classList.toggle('active',b.dataset.statusFilter===currentStatusFilter));
+ const af=$('activeStatusFilter');
+ if(currentStatusFilter==='all'){
+   af.classList.add('hidden');af.innerHTML='';
+ }else{
+   const label=currentStatusFilter==='overdue'?'Overdue only':currentStatusFilter==='soon'?'Due Soon only':'Upcoming only';
+   af.classList.remove('hidden');
+   af.innerHTML=`Showing: ${label}<button id="clearStatusFilter">Clear filter</button>`;
+   $('clearStatusFilter').onclick=()=>{currentStatusFilter='all';render();};
+ }
 }
 function updateMeterVisibility(type){$('meterFields').classList.toggle('hidden',type==='home')}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));$(b.dataset.view).classList.remove('hidden')});
@@ -697,4 +717,10 @@ $('cancelTask').onclick=()=>$('taskDialog').close();
 window.completeTask=id=>{const t=tasks.find(x=>x.id===id),a=assetByName(t.asset);$('completeTaskId').value=id;$('completeTitle').textContent=`${t.name} — ${t.asset}`;$('completedDate').value=todayISO();$('completedCost').value='';$('completedNotes').value='';$('completedMeter').value=(a&&a.type!=='home')?a.meter||'':'';$('completeMeterWrap').classList.toggle('hidden',!a||a.type==='home');$('completeDialog').showModal()};
 $('completeForm').onsubmit=e=>{e.preventDefault();const id=$('completeTaskId').value,t=tasks.find(x=>x.id===id),a=assetByName(t.asset);const date=$('completedDate').value, meter=(a&&a.type!=='home')?$('completedMeter').value:'';history.push({id:uid(),taskId:id,date,cost:$('completedCost').value,meter,meterType:a?.meterType||'',notes:$('completedNotes').value});if(a&&a.type!=='home'&&meter!=='')a.meter=meter;if(t.months)t.dueDate=addMonths(date,t.months);else if(!t.dueDate)t.dueDate='';t.lastCompleted=date;t.lastCompletedMeter=meter;t.nextDueMeterMiles=(a?.meterType==='miles'&&t.miles&&meter!=='')?(+meter+t.miles):'';t.nextDueMeterHours=(a?.meterType==='hours'&&t.hours&&meter!=='')?(+meter+t.hours):'';$('completeDialog').close();save()};
 $('cancelComplete').onclick=()=>$('completeDialog').close();
-$('search').oninput=render;$('assetFilter').onchange=render;render();
+$('search').oninput=render;
+$('assetFilter').onchange=render;
+document.querySelectorAll('[data-status-filter]').forEach(b=>b.onclick=()=>{
+ currentStatusFilter=b.dataset.statusFilter;
+ render();
+});
+render();
