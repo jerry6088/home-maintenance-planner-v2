@@ -14,24 +14,37 @@
 </header>
 <main>
 <nav id="tabs">
-<button data-view="maintenance" class="active">Maintenance</button>
+<button data-view="maintenance" class="active">Dashboard</button>
 <button data-view="vehicles">Vehicles</button>
 <button data-view="power">Power Equipment</button>
 <button data-view="home">Home Equipment</button>
 </nav>
 
 <section id="maintenance" class="view">
-<div class="stats">
-<div><span>Overdue</span><strong id="overdue">0</strong></div>
-<div><span>Due Soon</span><strong id="soon">0</strong></div>
+<div class="stats dashboard-stats">
+<div class="stat-critical"><span>Overdue</span><strong id="overdue">0</strong></div>
+<div class="stat-warning"><span>Due Soon</span><strong id="soon">0</strong></div>
 <div><span>Upcoming</span><strong id="upcoming">0</strong></div>
+<div><span>Total Equipment</span><strong id="equipmentTotal">0</strong></div>
 </div>
-<div class="toolbar"><input id="search" placeholder="Search maintenance, parts, part numbers...">
-<select id="assetFilter"><option value="">All equipment</option></select></div>
-<div id="taskList"></div>
+
+<section class="dashboard-panel attention-panel">
+<div class="section-title-row"><div><small>PRIORITY</small><h2>Needs Attention</h2></div></div>
+<div id="attentionList" class="attention-list"></div>
+<p id="attentionEmpty" class="muted">Nothing overdue or due soon.</p>
 </section>
 
-<section id="vehicles" class="view hidden"><h2>Vehicles</h2><div id="vehiclesList" class="grid"></div></section>
+<section class="dashboard-panel">
+<div class="section-title-row">
+  <div><small>MAINTENANCE</small><h2>Maintenance by Equipment</h2></div>
+  <div class="toolbar compact"><input id="search" placeholder="Search tasks, parts, equipment..."><select id="assetFilter"><option value="">All equipment</option></select></div>
+</div>
+<div id="equipmentGroups" class="equipment-groups"></div>
+</section>
+
+<div id="taskList" class="hidden"></div>
+</section>
+<section id="vehicles"<section id="vehicles" class="view hidden"><h2>Vehicles</h2><div id="vehiclesList" class="grid"></div></section>
 <section id="power" class="view hidden"><h2>Power Equipment</h2><div id="powerList" class="grid"></div></section>
 <section id="home" class="view hidden"><h2>Home Equipment</h2><div id="homeList" class="grid"></div></section>
 </main>

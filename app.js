@@ -607,17 +607,75 @@ function renderAssets(type,id){$(id).innerHTML=assets.filter(a=>a.type===type).m
 function partsHTML(t){if(!t.parts?.length)return'';return `<div class="parts"><strong>Parts & Supplies</strong>${t.parts.map(p=>`<div class="part-view"><b>${esc(p.description)}</b>${p.oem?` · OEM: ${esc(p.oem)}`:''}${p.aftermarket?` · Cross-ref: ${esc(p.aftermarket)}`:''}${p.qty?` · Qty/Capacity: ${esc(p.qty)}`:''}${p.notes?`<br>${esc(p.notes)}`:''}</div>`).join('')}</div>`}
 function historyHTML(t){const h=history.filter(x=>x.taskId===t.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));if(!h.length)return'';return `<details class="history"><summary>Service history (${h.length})</summary>${h.map(x=>`<div>${esc(x.date)}${x.meter!==''&&x.meter!=null?` · ${esc(x.meter)} ${esc(x.meterType||'')}`:''}${x.cost?` · $${Number(x.cost).toFixed(2)}`:''}${x.notes?`<br>${esc(x.notes)}`:''}</div>`).join('<hr>')}</details>`}
 function dueClass(t){if(!t.dueDate)return'';const days=(new Date(t.dueDate+'T12:00:00')-new Date())/86400000;if(days<0)return'overdue';if(days<=30)return'soon';return''}
+
+function taskUrgency(t){
+ if(!t.dueDate)return 3;
+ const diff=(new Date(t.dueDate+'T12:00:00')-new Date())/86400000;
+ if(diff<0)return 0;
+ if(diff<=30)return 1;
+ return 2;
+}
+function urgencyLabel(t){
+ const u=taskUrgency(t);
+ return u===0?'Overdue':u===1?'Due Soon':u===2?'Upcoming':'No Due Date';
+}
+function urgencyClass(t){
+ const u=taskUrgency(t);
+ return u===0?'overdue':u===1?'soon':'upcoming';
+}
+function taskSort(a,b){
+ const ua=taskUrgency(a),ub=taskUrgency(b);
+ if(ua!==ub)return ua-ub;
+ if(a.dueDate&&b.dueDate)return a.dueDate.localeCompare(b.dueDate);
+ if(a.dueDate)return -1;if(b.dueDate)return 1;
+ return a.name.localeCompare(b.name);
+}
+function assetIcon(a){
+ if(!a)return'⚙️';
+ if(a.type==='vehicle')return'🚙';
+ if(a.type==='power'){
+  if((a.name||'').toLowerCase().includes('tractor'))return'🚜';
+  if((a.name||'').toLowerCase().includes('scag'))return'🌱';
+  return'🛞';
+ }
+ if(a.type==='home'){
+  const n=(a.name||'').toLowerCase();
+  if(n.includes('hvac')||n.includes('heat pump')||n.includes('air handler'))return'❄️';
+  if(n.includes('refrigerator'))return'🧊';
+  if(n.includes('washer')||n.includes('dishwasher'))return'🧺';
+  if(n.includes('microwave')||n.includes('range'))return'🍳';
+  return'🏠';
+ }
+ return'⚙️';
+}
 function render(){
  renderAssets('vehicle','vehiclesList');renderAssets('power','powerList');renderAssets('home','homeList');
  const prev=$('assetFilter').value;
  $('assetFilter').innerHTML='<option value="">All equipment</option>'+assets.map(a=>`<option>${esc(a.name)}</option>`).join('');
  $('assetFilter').value=prev;
- let q=$('search').value.toLowerCase(),f=$('assetFilter').value;
- let list=tasks.filter(t=>(!f||t.asset===f)&&(`${t.name} ${t.asset} ${t.notes} ${(t.parts||[]).map(p=>Object.values(p).join(' ')).join(' ')}`).toLowerCase().includes(q));
- $('taskList').innerHTML=list.map(t=>{const a=assetByName(t.asset);const intervals=[t.months&&t.months+' mo',!isHomeAsset(t.asset)&&t.miles&&t.miles+' mi',!isHomeAsset(t.asset)&&t.hours&&t.hours+' hr'].filter(Boolean);return `<article class="task ${dueClass(t)}"><div class="task-main"><strong>${esc(t.name)}</strong><div class="muted">${esc(t.asset)}</div>${t.dueDate?`<p><b>Next due:</b> ${esc(t.dueDate)}</p>`:''}<p>${esc(t.notes||'')}</p><span class="badge">${intervals.join(' / ')||'Condition / periodic check'}</span>${partsHTML(t)}${historyHTML(t)}</div><div class="task-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button onclick="editTask('${t.id}')">Edit</button></div></article>`}).join('');
- $('overdue').textContent=list.filter(t=>t.dueDate&&new Date(t.dueDate+'T12:00:00')<new Date()).length;
- $('soon').textContent=list.filter(t=>t.dueDate&&new Date(t.dueDate+'T12:00:00')>=new Date()&&(new Date(t.dueDate+'T12:00:00')-new Date())/86400000<=30).length;
- $('upcoming').textContent=list.filter(t=>!t.dueDate||(new Date(t.dueDate+'T12:00:00')-new Date())/86400000>30).length;
+ $('equipmentTotal').textContent=assets.length;
+
+ const q=$('search').value.toLowerCase(),f=$('assetFilter').value;
+ const allFiltered=tasks.filter(t=>(!f||t.asset===f)&&(`${t.name} ${t.asset} ${t.notes} ${(t.parts||[]).map(p=>Object.values(p).join(' ')).join(' ')}`).toLowerCase().includes(q)).sort(taskSort);
+
+ const attention=allFiltered.filter(t=>taskUrgency(t)<=1);
+ $('attentionList').innerHTML=attention.map(t=>`<article class="attention-item ${urgencyClass(t)}"><div><div class="status-label ${urgencyClass(t)}">${urgencyLabel(t)}</div><strong>${esc(t.name)}</strong><div class="attention-meta">${esc(t.asset)}${t.dueDate?` · Due ${esc(t.dueDate)}`:''}</div>${partsHTML(t)}</div><div class="attention-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button onclick="editTask('${t.id}')">Edit</button></div></article>`).join('');
+ $('attentionEmpty').classList.toggle('hidden',attention.length>0);
+
+ const grouped=assets.map(a=>({asset:a,tasks:allFiltered.filter(t=>t.asset===a.name)})).filter(g=>g.tasks.length||(!q&&!f));
+ $('equipmentGroups').innerHTML=grouped.map(g=>{
+   const overdue=g.tasks.filter(t=>taskUrgency(t)===0).length;
+   const soon=g.tasks.filter(t=>taskUrgency(t)===1).length;
+   const sorted=g.tasks.slice().sort(taskSort);
+   const meter=(g.asset.type!=='home'&&g.asset.meter!=='')?`${g.asset.meter} ${g.asset.meterType}`:'';
+   const shouldOpen=overdue>0||soon>0||Boolean(f);
+   return `<details class="equipment-group" ${shouldOpen?'open':''}><summary><div class="group-title"><span>${assetIcon(g.asset)}</span><div><h3>${esc(g.asset.name)}</h3><div class="group-meta">${esc([g.asset.year,g.asset.make,g.asset.model].filter(Boolean).join(' '))}${meter?` · ${esc(meter)}`:''}</div></div></div><div class="group-badges">${overdue?`<span class="badge">${overdue} overdue</span>`:''}${soon?`<span class="badge">${soon} due soon</span>`:''}<span class="badge">${g.tasks.length} tasks</span></div></summary><div class="group-body">${sorted.length?sorted.map(t=>`<article class="group-task ${urgencyClass(t)}"><div class="group-task-main"><div class="status-label ${urgencyClass(t)}">${urgencyLabel(t)}</div><strong>${esc(t.name)}</strong>${t.dueDate?`<div class="muted">Due ${esc(t.dueDate)}</div>`:''}<p>${esc(t.notes||'')}</p>${partsHTML(t)}${historyHTML(t)}</div><div class="group-task-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button onclick="editTask('${t.id}')">Edit</button></div></article>`).join(''):'<p class="muted">No maintenance tasks match the current filter.</p>'}</div></details>`;
+ }).join('');
+
+ $('taskList').innerHTML='';
+ $('overdue').textContent=allFiltered.filter(t=>taskUrgency(t)===0).length;
+ $('soon').textContent=allFiltered.filter(t=>taskUrgency(t)===1).length;
+ $('upcoming').textContent=allFiltered.filter(t=>taskUrgency(t)>=2).length;
 }
 function updateMeterVisibility(type){$('meterFields').classList.toggle('hidden',type==='home')}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));$(b.dataset.view).classList.remove('hidden')});
