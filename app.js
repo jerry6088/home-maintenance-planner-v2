@@ -1026,7 +1026,7 @@ function render(){
  $('peopleMiniList').innerHTML=PEOPLE.map(p=>`<button type="button" class="${prevAssignee===p?'active':''}" onclick="openPersonTasks('${esc(p)}')">${esc(p)}</button>`).join('');
  $('equipmentTotal').textContent=assets.length;
  renderSeasonalPanelState();
- if(seasonalPanelOpen)renderSeasonal();
+ if(seasonalPanelOpen){renderSeasonal();}
  $('recentHistory').innerHTML=historyRows(null,8);
 
  const q=$('search').value.toLowerCase(),f=$('assetFilter').value,person=$('assigneeFilter')?.value||'';
@@ -1095,6 +1095,7 @@ window.openPersonTasks=function(person){
  if(filter){
    filter.value=person;
    render();
+   if($('assigneeFilter'))$('assigneeFilter').value=person;
  }
  // Collapse seasonal maintenance so assigned equipment tasks are immediately visible.
  seasonalPanelOpen=false;
@@ -1138,7 +1139,11 @@ $('search').oninput=render;
 $('assetFilter').onchange=render;
 $('assigneeFilter').onchange=render;
 $('showCompletedSeasonal').onchange=renderSeasonal;
-$('toggleSeasonalPanel').onclick=()=>{seasonalPanelOpen=!seasonalPanelOpen;renderSeasonalPanelState();if(seasonalPanelOpen)renderSeasonal();};
+$('toggleSeasonalPanel').onclick=()=>{
+ seasonalPanelOpen=!seasonalPanelOpen;
+ renderSeasonalPanelState();
+ if(seasonalPanelOpen)renderSeasonal();
+};
 
 $('closeDetail').onclick=()=>$('equipmentDetailDialog').close();
 document.querySelectorAll('[data-detail-tab]').forEach(b=>b.onclick=()=>renderDetailTab(b.dataset.detailTab));

@@ -128,3 +128,23 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 .people-mini-list button{font-size:11px;background:#ffffff18;border:1px solid #ffffff24;color:white;border-radius:999px;padding:6px 9px}
 .people-mini-list button:hover{background:#ffffff2b}
 .people-mini-list button.active{background:white;color:#2146d0;border-color:white;font-weight:900}
+
+/* V19 layout fixes */
+.sidebar{box-sizing:border-box;overflow-x:hidden}
+.brand{min-width:0}.brand>div:last-child{min-width:0}.brand h1{line-height:1.05}
+.people-mini-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.people-mini-list button{min-width:0;width:100%;padding:6px 3px;white-space:nowrap;font-size:10px}
+.toolbar.compact{display:grid!important;grid-template-columns:minmax(180px,1fr) minmax(170px,240px) minmax(120px,150px);gap:9px;width:min(100%,590px);margin-left:auto;box-sizing:border-box}
+.toolbar.compact input,.toolbar.compact select{width:100%!important;min-width:0!important;box-sizing:border-box}
+.section-title-row{align-items:flex-start;gap:14px;flex-wrap:wrap}
+#equipmentGroups{clear:both}
+.seasonal-panel-body.hidden{display:none!important}
+.seasonal-panel-body:not(.hidden){display:block!important}
+@media(max-width:1150px){
+ .toolbar.compact{grid-template-columns:1fr 1fr;width:100%;margin-left:0}
+ .toolbar.compact input{grid-column:1/-1}
+}
+@media(max-width:650px){
+ .toolbar.compact{grid-template-columns:1fr}
+ .toolbar.compact input{grid-column:auto}
+}
