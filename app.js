@@ -603,7 +603,7 @@ function esc(x=''){return String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;
 function addMonths(dateStr,n){const d=new Date((dateStr||todayISO())+'T12:00:00');d.setMonth(d.getMonth()+(+n||0));return d.toISOString().slice(0,10)}
 function isHomeAsset(name){return assetByName(name)?.type==='home'}
 function meterLabel(a){if(!a||a.type==='home'||a.meterType==='none')return'';return a.meter!==''?`${a.meter} ${a.meterType}`:'Meter not entered'}
-function renderAssets(type,id){$(id).innerHTML=assets.filter(a=>a.type===type).map(a=>`<article class="card"><h3>${esc(a.name)}</h3><div class="muted">${esc([a.year,a.make,a.model].filter(Boolean).join(' '))}</div>${type!=='home'?`<div class="meter">${esc(meterLabel(a))}</div>`:''}${a.serial?`<div class="muted">VIN / Serial: ${esc(a.serial)}</div>`:''}<p>${esc(a.notes||'')}</p><button onclick="editAsset('${a.id}')">Edit</button></article>`).join('')}
+function renderAssets(type,id){$(id).innerHTML=assets.filter(a=>a.type===type).map(a=>`<article class="card"><h3>${esc(a.name)}</h3><div class="muted">${esc([a.year,a.make,a.model].filter(Boolean).join(' '))}</div>${type!=='home'?`<div class="meter">${esc(meterLabel(a))}</div>`:''}${a.serial?`<div class="muted">VIN / Serial: ${esc(a.serial)}</div>`:''}<p>${esc(a.notes||'')}</p><div class="card-actions"><button onclick="openEquipmentDetail('${a.id}','parts')">Parts List</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','manuals')">Manuals</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','specs')">Specs</button><button class="secondary" onclick="editAsset('${a.id}')">Edit</button></div></article>`).join('')}
 function partsHTML(t){if(!t.parts?.length)return'';return `<div class="parts"><strong>Parts & Supplies</strong>${t.parts.map(p=>`<div class="part-view"><b>${esc(p.description)}</b>${p.oem?` · OEM: ${esc(p.oem)}`:''}${p.aftermarket?` · Cross-ref: ${esc(p.aftermarket)}`:''}${p.qty?` · Qty/Capacity: ${esc(p.qty)}`:''}${p.notes?`<br>${esc(p.notes)}`:''}</div>`).join('')}</div>`}
 function historyHTML(t){const h=history.filter(x=>x.taskId===t.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));if(!h.length)return'';return `<details class="history"><summary>Service history (${h.length})</summary>${h.map(x=>`<div>${esc(x.date)}${x.meter!==''&&x.meter!=null?` · ${esc(x.meter)} ${esc(x.meterType||'')}`:''}${x.cost?` · $${Number(x.cost).toFixed(2)}`:''}${x.notes?`<br>${esc(x.notes)}`:''}</div>`).join('<hr>')}</details>`}
 function dueClass(t){if(!t.dueDate)return'';const days=(new Date(t.dueDate+'T12:00:00')-new Date())/86400000;if(days<0)return'overdue';if(days<=30)return'soon';return''}
@@ -648,6 +648,76 @@ function assetIcon(a){
  }
  return'⚙️';
 }
+
+const equipmentLibrary={
+ '2021 Ford Expedition':{
+  manuals:[{title:'2021 Ford Expedition Owner Manual',url:'https://www.fordservicecontent.com/Ford_Content/Catalog/owner_information/2021-Ford-Expedition-Owners-Manual-version-1_om_EN-US_10_2020.pdf',note:'Ford owner manual / maintenance information.'}],
+  specs:[['Engine','3.5L GTDI V6'],['Oil filter','Motorcraft FL-500-S'],['Engine air filter','Motorcraft FA-1883'],['Cabin filter','Motorcraft FP-92'],['Spark plugs','Motorcraft SP-594 (6)']]
+ },
+ '2002 Ford F-150':{
+  manuals:[{title:'2002 Ford F-150 Owner Manual',url:'https://www.fordservicecontent.com/Ford_Content/catalog/owner_guides/02f12og4e.pdf',note:'Ford factory owner guide.'}],
+  specs:[['Engine','5.4L SOHC V8 (VIN L)'],['Engine oil','SAE 5W-20'],['Oil capacity','6.0 qt with filter'],['Oil filter','Motorcraft FL-820-S'],['Air filter','Motorcraft FA-1634'],['Fuel filter','Motorcraft FG-986B']]
+ },
+ '2020 Polaris Ranger 1000':{
+  manuals:[{title:'Polaris Owner Manual',url:'https://publications.polaris.com/owner/owners-manuals/0000631847.xml?onepage=true',note:'Polaris online owner manual.'}],
+  specs:[['Engine oil','PS-4 Full Synthetic 5W-50'],['Oil capacity','2.5 qt (2.4 L)'],['Oil kit','2879323'],['Oil filter','2540086'],['Drain washer','5812232']]
+ },
+ 'Scag Freedom Z 52':{
+  manuals:[{title:'Scag Freedom Z Operator Manual',url:'https://www.scag.com/wp-content/uploads/2020/04/SFZ_Book_03270_Rev2.pdf',note:'Scag operator manual. Kohler engine manual will be added after exact engine model is identified.'}],
+  specs:[['Deck','52 in'],['Engine','Kohler — exact model pending'],['Hydraulic oil','SAE 20W-50 motor oil'],['Engine service parts','Pending exact Kohler model']]
+ },
+ '2006 Mahindra 4530':{
+  manuals:[{title:'Mahindra 4530 / 30 Series Operator Manual',url:'',note:'Manual record added; exact stable manufacturer-hosted PDF link can be attached when available.'}],
+  specs:[['Engine oil','SAE 15W-40'],['Oil filter','000020316E05'],['Primary fuel filter','006006648D1'],['Secondary fuel filter','001081778R93'],['Outer air filter','006008799F1'],['Inner air filter','006000456F1'],['Hydraulic filter','000013427P04']]
+ },
+ '2007 Honda Recon 250':{
+  manuals:[{title:'Honda Recon Owner Manual',url:'',note:'Exact 2007 TRX250TM/TE manual link will be attached after shift variant is confirmed.'}],
+  specs:[['Air cleaner','17254-HM8-000'],['Spark plug','Honda 98069-58916 / NGK DPR8EA-9'],['Engine oil service','600 mi / 100 hr / 12 months']]
+ },
+ '2014 Volkswagen Passat':{
+  manuals:[{title:'Volkswagen Owner Literature',url:'https://www.vwserviceandparts.com/digital-resources/online-owners-manual/',note:'Volkswagen owner-manual lookup; use VIN for exact literature.'}],
+  specs:[['VIN','1VWBS7A36EC087006'],['Oil filter (1.8T application)','06K115562 — verify engine/PR code'],['Spark plug (1.8T application)','06K905601D — verify engine/PR code']]
+ },
+ '1996 Chevy 1500':{
+  manuals:[{title:'Chevrolet Owner Manual',url:'',note:'Exact manual and engine-specific service parts will be attached after VIN/engine code is entered.'}],
+  specs:[['Engine','Pending VIN / engine code'],['Oil filter','Pending engine identification'],['Oil capacity','Pending engine identification']]
+ }
+};
+function collectedParts(assetName){
+ const out=[],seen=new Set();
+ tasks.filter(t=>t.asset===assetName).forEach(t=>(t.parts||[]).forEach(p=>{
+  const key=[p.description,p.oem,p.aftermarket].join('|');
+  if(!seen.has(key)&&(p.description||p.oem)){seen.add(key);out.push({...p,service:t.name})}
+ }));
+ return out;
+}
+function renderDetailTab(tab){
+ document.querySelectorAll('[data-detail-tab]').forEach(b=>b.classList.toggle('active',b.dataset.detailTab===tab));
+ ['detailParts','detailManuals','detailSpecs'].forEach(id=>$(id).classList.add('hidden'));
+ const a=assets.find(x=>x.id===$('equipmentDetailDialog').dataset.assetId);if(!a)return;
+ const lib=equipmentLibrary[a.name]||{manuals:[],specs:[]};
+ if(tab==='parts'){
+  $('detailParts').classList.remove('hidden');const ps=collectedParts(a.name);
+  $('detailParts').innerHTML=ps.length?`<table class="parts-table"><thead><tr><th>Part / Supply</th><th>OEM #</th><th>Qty / Capacity</th><th>Cross-ref</th><th>Service</th></tr></thead><tbody>${ps.map(p=>`<tr><td><b>${esc(p.description)}</b>${p.notes?`<div class="muted">${esc(p.notes)}</div>`:''}</td><td>${esc(p.oem||'—')}</td><td>${esc(p.qty||'—')}</td><td>${esc(p.aftermarket||'—')}</td><td>${esc(p.service||'')}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">No verified parts have been added for this equipment yet.</p>';
+ }else if(tab==='manuals'){
+  $('detailManuals').classList.remove('hidden');
+  $('detailManuals').innerHTML=lib.manuals.length?lib.manuals.map(m=>`<article class="manual-card"><h4>${esc(m.title)}</h4><div class="muted">${esc(m.note||'')}</div>${m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">Open manufacturer manual ↗</a>`:'<div class="muted" style="margin-top:8px">Manual link pending verification.</div>'}</article>`).join(''):'<p class="muted">Manufacturer manual has not been attached yet.</p>';
+ }else{
+  $('detailSpecs').classList.remove('hidden');
+  const base=[['Make / Brand',a.make||'—'],['Model',a.model||'—'],['Year',a.year||'—'],['VIN / Serial',a.serial||'—']];
+  const specs=base.concat(lib.specs||[]);
+  $('detailSpecs').innerHTML=`<div class="spec-grid">${specs.map(s=>`<div class="spec-card"><b>${esc(s[0])}</b><span>${esc(s[1])}</span></div>`).join('')}</div>${a.notes?`<div class="spec-card"><h4>Notes</h4>${esc(a.notes)}</div>`:''}`;
+ }
+}
+window.openEquipmentDetail=(id,tab='parts')=>{
+ const a=assets.find(x=>x.id===id);if(!a)return;
+ const d=$('equipmentDetailDialog');d.dataset.assetId=id;
+ $('detailType').textContent=a.type==='vehicle'?'VEHICLE':a.type==='power'?'POWER EQUIPMENT':'HOME EQUIPMENT';
+ $('detailTitle').textContent=a.name;
+ $('detailSubtitle').textContent=[a.year,a.make,a.model,a.type!=='home'&&a.meter!==''?`${a.meter} ${a.meterType}`:''].filter(Boolean).join(' · ');
+ renderDetailTab(tab);d.showModal();
+};
+
 let currentStatusFilter='all';
 function render(){
  renderAssets('vehicle','vehiclesList');renderAssets('power','powerList');renderAssets('home','homeList');
@@ -719,6 +789,9 @@ $('completeForm').onsubmit=e=>{e.preventDefault();const id=$('completeTaskId').v
 $('cancelComplete').onclick=()=>$('completeDialog').close();
 $('search').oninput=render;
 $('assetFilter').onchange=render;
+
+$('closeDetail').onclick=()=>$('equipmentDetailDialog').close();
+document.querySelectorAll('[data-detail-tab]').forEach(b=>b.onclick=()=>renderDetailTab(b.dataset.detailTab));
 document.querySelectorAll('[data-status-filter]').forEach(b=>b.onclick=()=>{
  currentStatusFilter=b.dataset.statusFilter;
  render();

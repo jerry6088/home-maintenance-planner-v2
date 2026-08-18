@@ -86,5 +86,20 @@
 <div class="actions"><button type="button" id="cancelComplete">Cancel</button><button type="submit">Mark Complete</button></div>
 </form></dialog>
 
+
+<dialog id="equipmentDetailDialog" class="wide-dialog">
+<div class="detail-shell">
+<div class="detail-head"><div><small id="detailType"></small><h2 id="detailTitle"></h2><div id="detailSubtitle" class="muted"></div></div><button type="button" id="closeDetail">✕</button></div>
+<div class="detail-tabs">
+<button type="button" data-detail-tab="parts" class="active">Parts List</button>
+<button type="button" data-detail-tab="manuals">Manuals</button>
+<button type="button" data-detail-tab="specs">Specifications</button>
+</div>
+<section id="detailParts" class="detail-pane"></section>
+<section id="detailManuals" class="detail-pane hidden"></section>
+<section id="detailSpecs" class="detail-pane hidden"></section>
+</div>
+</dialog>
+
 <script src="app.js"></script>
 </body></html>
