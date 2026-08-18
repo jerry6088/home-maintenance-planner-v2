@@ -1012,6 +1012,35 @@ window.undoSeasonalCompletion=function(id){
 };
 
 let seasonalPanelOpen=false;
+
+const CK='hmv2-weekly-chores';
+let chores=JSON.parse(localStorage.getItem(CK)||'null')||[];
+let choreFilter='today';
+function mondayOfWeek(d=new Date()){
+ const x=new Date(d);const day=(x.getDay()+6)%7;x.setHours(12,0,0,0);x.setDate(x.getDate()-day);return x.toISOString().slice(0,10);
+}
+function currentDayName(){return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()]}
+function choreDoneThisWeek(c){return c.completedWeek===mondayOfWeek()}
+function saveChores(){localStorage.setItem(CK,JSON.stringify(chores))}
+function renderChores(){
+ const pf=$('chorePersonFilter')?.value||'';
+ if($('chorePersonFilter')){
+  $('chorePersonFilter').innerHTML='<option value="">Everyone</option>'+PEOPLE.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  $('chorePersonFilter').value=pf;
+ }
+ document.querySelectorAll('[data-chore-filter]').forEach(b=>b.classList.toggle('active',b.dataset.choreFilter===choreFilter));
+ const done=chores.filter(choreDoneThisWeek).length;
+ $('choreProgress').textContent=`${done} of ${chores.length} complete`;
+ let list=chores.filter(c=>!pf||c.assignee===pf);
+ if(choreFilter==='today')list=list.filter(c=>c.day===currentDayName()&&!choreDoneThisWeek(c));
+ else if(choreFilter==='week')list=list.filter(c=>!choreDoneThisWeek(c));
+ list.sort((a,b)=>['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(a.day)-['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(b.day));
+ $('choreList').innerHTML=list.length?list.map(c=>`<article class="chore-card ${choreDoneThisWeek(c)?'done':''}"><div><div class="chore-title">${esc(c.name)}</div><div class="chore-meta">${esc(c.day)} · ${c.assignee?`Assigned to ${esc(c.assignee)}`:'Unassigned'}</div>${c.notes?`<p>${esc(c.notes)}</p>`:''}${choreDoneThisWeek(c)?'<span class="completed-badge">✓ Completed this week</span>':''}</div><div class="chore-actions">${choreDoneThisWeek(c)?`<button class="undo-chore" onclick="undoChore('${c.id}')">↶ Undo</button>`:`<button onclick="completeChore('${c.id}')">✓ Complete</button>`}<button class="edit-chore" onclick="editChore('${c.id}')">Edit</button></div></article>`).join(''):'<div class="dashboard-panel"><p class="muted">No chores to show for this view.</p></div>';
+}
+window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek=mondayOfWeek();c.completedDate=todayISO();saveChores();renderChores()};
+window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek='';c.completedDate='';saveChores();renderChores()};
+window.editChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;$('choreId').value=c.id;$('choreName').value=c.name;populateAssigneeSelect('choreAssignee',c.assignee||'');$('choreDay').value=c.day;$('choreNotes').value=c.notes||'';$('choreDialogTitle').textContent='Edit Weekly Chore';$('choreDialog').showModal()};
+
 let currentStatusFilter='all';
 function render(){
  renderAssets('vehicle','vehiclesList');renderAssets('power','powerList');renderAssets('home','homeList');
@@ -1076,7 +1105,8 @@ const pageMeta={
  maintenance:['HOME & PROPERTY','Dashboard','Everything that needs attention, grouped and prioritized.'],
  vehicles:['FLEET','Vehicles','Mileage-based maintenance, OEM parts, manuals and service history.'],
  power:['EQUIPMENT','Power Equipment','Hours-based maintenance for mowers, UTVs, tractors and outdoor equipment.'],
- home:['HOME SYSTEMS','Home Equipment','Appliances, HVAC, manuals, parts and calendar maintenance.']
+ home:['HOME SYSTEMS','Home Equipment','Appliances, HVAC, manuals, parts and calendar maintenance.'],
+ chores:['HOUSEHOLD','Weekly Chores','Recurring household chores, assignments and weekly progress.']
 };
 function setPageMeta(view){
  const m=pageMeta[view]||pageMeta.maintenance;
@@ -1112,6 +1142,7 @@ function showMainView(view){
  document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));
  $(view).classList.remove('hidden');
  setPageMeta(view);
+ if(view==='chores')renderChores();
  closeSidebar();
  window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1170,5 +1201,12 @@ $('historyNavBtn').onclick=()=>{
  setTimeout(()=>$('recentHistory')?.closest('.dashboard-panel')?.scrollIntoView({behavior:'smooth',block:'start'}),80);
 };
 setPageMeta('maintenance');
+
+
+$('addChoreBtn').onclick=()=>{$('choreForm').reset();$('choreId').value='';populateAssigneeSelect('choreAssignee','');$('choreDialogTitle').textContent='Add Weekly Chore';$('choreDialog').showModal()};
+$('cancelChore').onclick=()=>$('choreDialog').close();
+$('choreForm').onsubmit=e=>{e.preventDefault();const id=$('choreId').value;const data={id:id||uid(),name:$('choreName').value.trim(),assignee:$('choreAssignee').value||'',day:$('choreDay').value,notes:$('choreNotes').value.trim(),completedWeek:'',completedDate:''};if(id){const old=chores.find(c=>c.id===id);if(old){data.completedWeek=old.completedWeek||'';data.completedDate=old.completedDate||'';Object.assign(old,data)}}else chores.push(data);saveChores();$('choreDialog').close();renderChores()};
+document.querySelectorAll('[data-chore-filter]').forEach(b=>b.onclick=()=>{choreFilter=b.dataset.choreFilter;renderChores()});
+$('chorePersonFilter').onchange=renderChores;
 
 render();

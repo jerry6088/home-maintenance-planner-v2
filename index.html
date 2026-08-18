@@ -22,6 +22,7 @@
     <button data-view="home"><span class="nav-icon">⌂</span><span>Home Equipment</span></button>
     <button id="seasonNavBtn" type="button"><span class="nav-icon">☀</span><span>Seasonal Maintenance</span></button>
     <button id="historyNavBtn" type="button"><span class="nav-icon">↺</span><span>History</span></button>
+<button data-view="chores"><span class="nav-icon">✓</span><span>Weekly Chores</span></button>
   </nav>
 
   <div class="sidebar-section">
@@ -91,6 +92,20 @@
 <section id="vehicles"<section id="vehicles" class="view hidden"><h2>Vehicles</h2><div id="vehiclesList" class="grid"></div></section>
 <section id="power" class="view hidden"><h2>Power Equipment</h2><div id="powerList" class="grid"></div></section>
 <section id="home" class="view hidden"><h2>Home Equipment</h2><div id="homeList" class="grid"></div></section>
+
+<section id="chores" class="view hidden">
+  <div class="chores-summary">
+    <div><small>WEEKLY PROGRESS</small><h2 id="choreProgress">0 of 0 complete</h2></div>
+    <button id="addChoreBtn" type="button">+ Add Chore</button>
+  </div>
+  <div class="chore-toolbar">
+    <button data-chore-filter="today" class="active">Today</button>
+    <button data-chore-filter="week">This Week</button>
+    <button data-chore-filter="all">All Chores</button>
+    <select id="chorePersonFilter"><option value="">Everyone</option></select>
+  </div>
+  <div id="choreList" class="chore-list"></div>
+</section>
 </main>
 </div>
 </div>
@@ -144,6 +159,21 @@
 <section id="detailManuals" class="detail-pane hidden"></section>
 <section id="detailSpecs" class="detail-pane hidden"></section><section id="detailHistory" class="detail-pane hidden"></section>
 </div>
+</dialog>
+
+
+<dialog id="choreDialog">
+<form id="choreForm" method="dialog">
+<h3 id="choreDialogTitle">Add Weekly Chore</h3>
+<input id="choreId" type="hidden">
+<label>Chore<input id="choreName" required placeholder="e.g. Take trash to road"></label>
+<label>Assigned To<select id="choreAssignee"></select></label>
+<label>Day<select id="choreDay">
+<option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+</select></label>
+<label>Notes<textarea id="choreNotes" rows="3" placeholder="Optional instructions"></textarea></label>
+<div class="actions"><button type="button" id="cancelChore" class="secondary">Cancel</button><button type="submit">Save Chore</button></div>
+</form>
 </dialog>
 
 <script src="app.js"></script>
