@@ -3,6 +3,6 @@
 // The publishable/anon key is intended for browser use when Row Level Security is enabled.
 // NEVER put a service_role key here.
 window.HM_CLOUD_CONFIG = {
-  url: "PASTE_SUPABASE_PROJECT_URL_HERE",
-  key: "PASTE_SUPABASE_PUBLISHABLE_OR_ANON_KEY_HERE"
+  url: https://gnyuigmuzvodobbvdhrp.supabase.co
+  key: sb_publishable_2Bzt-JAF74bz9hleWUkH1A_Gd1kEe9f
 };
