@@ -315,3 +315,8 @@ body.sidebar-collapsed .desktop-sidebar-toggle{transform:rotate(180deg)}
 
 /* V42 daily weekly chores */
 .chore-card.done{opacity:.8}
+
+/* V43 completed chores remain visible */
+.chore-completed-visible{opacity:.68}
+.chore-completed-visible strong{text-decoration:line-through}
+.chore-completed-visible .today-kind{opacity:.8}

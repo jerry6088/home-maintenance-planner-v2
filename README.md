@@ -1,16 +1,14 @@
-# V42 Daily Weekly Chores
-
-Built from V41.
+# V43 Visible Completed Chores
+Built from V42.
 
 Changes:
-- Today's Chores moved above Priority on Dashboard
-- Entire-week chores can be checked off every day
-- completing an entire-week chore only completes it for that date
-- next day the chore appears again automatically
-- Undo removes only today's completion for an entire-week chore
-- Calendar records daily completion state for entire-week chores
-- fixed-day chores keep their existing weekly completion behavior
-- V41 UI polish and working cloud sync remain intact
+- completed chores stay visible on Today's Chores
+- completed chores stay visible on Dashboard Today's Chores
+- completed chores are crossed out instead of disappearing
+- shows a check mark and Completed label
+- assignee remains visible so the family can see who completed it
+- unfinished count still counts only chores that need to be done
+- V42 daily completion behavior remains intact
 
 cloud-config.js is intentionally not included.
-Open with ?v=42.
+Open with ?v=43.

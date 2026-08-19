@@ -1206,7 +1206,7 @@ function calendarItemsForDate(dateStr){
 
 function todayChores(){
  const ds=isoLocal(new Date());
- return chores.filter(c=>choreAssignedThisWeek(c)&&!(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))&&(
+ return chores.filter(c=>choreAssignedThisWeek(c)&&(
    c.scheduleType==='week' || choreEffectiveDueDate(c)===ds
  ));
 }
@@ -1231,17 +1231,17 @@ function renderToday(){
  $('todayDateLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
  $('todayDueCount').textContent=dueToday.length;
  $('todayOverdueCount').textContent=overdue.length;
- $('todayChoreCount').textContent=ch.length;
+ $('todayChoreCount').textContent=ch.filter(c=>!(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))).length;
  $('todayMineCount').textContent=mineMaint.length+mineChores.length;
 
  $('todayDueList').innerHTML=dueToday.length?dueToday.map(t=>todayRowHTML('Maintenance',t.name,`${t.asset}${t.assignee?' · '+t.assignee:''}` ,t.id,'maintenance')).join(''):'<p class="muted">Nothing due today.</p>';
  $('todayOverdueList').innerHTML=overdue.length?overdue.map(t=>todayRowHTML('Overdue',t.name,`${t.asset}${t.assignee?' · '+t.assignee:''}`,t.id,'maintenance')).join(''):'<p class="muted">No overdue maintenance.</p>';
- $('todayChoreList').innerHTML=ch.length?ch.map(c=>todayRowHTML('Chore',c.name,`${effectiveChoreAssignee(c)||'Unassigned'} · ${c.scheduleType==='week'?'Entire week':c.day}`,c.id,'chore')).join(''):'<p class="muted">No chores scheduled today.</p>';
+ $('todayChoreList').innerHTML=ch.length?ch.map(c=>{const done=c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c);return `<article class="today-row clickable-task ${done?'chore-completed-visible':''}" onclick="openTaskDetails('chore','${c.id}')"><div><strong>${done?'✓ ':''}${esc(c.name)}</strong><div class="muted">${esc(effectiveChoreAssignee(c)||'Unassigned')} · ${esc(c.scheduleType==='week'?'Every day this week':c.day)}${done?' · Completed today':''}</div></div><span class="today-kind">${done?'Completed':'Chore'}</span></article>`}).join(''):'<p class="muted">No chores scheduled today.</p>';
  const mine=[...mineMaint.map(t=>({kind:'Maintenance',name:t.name,meta:t.asset,id:t.id,type:'maintenance'})),...mineChores.map(c=>({kind:'Chore',name:c.name,meta:c.scheduleType==='week'?'Entire week':c.day,id:c.id,type:'chore'}))];
  $('todayMineList').innerHTML=mine.length?mine.map(x=>todayRowHTML(x.kind,x.name,x.meta,x.id,x.type)).join(''):'<p class="muted">Nothing assigned to you today.</p>';
 
  const db=$('dashboardTodayChores');
- if(db)db.innerHTML=ch.length?ch.slice(0,8).map(c=>todayRowHTML('Chore',c.name,`${effectiveChoreAssignee(c)||'Unassigned'} · ${c.scheduleType==='week'?'Entire week':c.day}`,c.id,'chore')).join(''):'<p class="muted">No chores scheduled today.</p>';
+ if(db)db.innerHTML=ch.length?ch.slice(0,8).map(c=>{const done=c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c);return `<article class="today-row clickable-task ${done?'chore-completed-visible':''}" onclick="openTaskDetails('chore','${c.id}')"><div><strong>${done?'✓ ':''}${esc(c.name)}</strong><div class="muted">${esc(effectiveChoreAssignee(c)||'Unassigned')} · ${esc(c.scheduleType==='week'?'Every day this week':c.day)}${done?' · Completed today':''}</div></div><span class="today-kind">${done?'Completed':'Chore'}</span></article>`}).join(''):'<p class="muted">No chores scheduled today.</p>';
 }
 
 function renderCalendar(){
