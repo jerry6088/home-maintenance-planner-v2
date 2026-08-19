@@ -1,9 +1,0 @@
-{
-  "appId": "com.miller.homeplanner",
-  "appName": "Home Maintenance Planner",
-  "webDir": "www",
-  "server": {
-    "url": "https://jerry6088.github.io/home-maintenance-planner-v2/",
-    "cleartext": false
-  }
-}
