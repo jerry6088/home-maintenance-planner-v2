@@ -1482,3 +1482,18 @@ $('saveTaskDetailAssignment').onclick=()=>{
 };
 
 render();
+
+/* V34 explicit realtime sync bridge */
+window.addEventListener('DOMContentLoaded',()=>{
+  document.addEventListener('submit',()=>setTimeout(()=>window.hmCloudChanged?.('submit'),0),true);
+  document.addEventListener('change',e=>{
+    if(e.target && ['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)){
+      setTimeout(()=>window.hmCloudChanged?.('change'),0);
+    }
+  },true);
+  document.addEventListener('click',e=>{
+    if(e.target.closest('button')){
+      setTimeout(()=>window.hmCloudChanged?.('button'),250);
+    }
+  },true);
+});

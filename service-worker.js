@@ -1,5 +1,5 @@
 
-const CACHE='home-maintenance-v33';
+const CACHE='home-maintenance-v34';
 const SHELL=['./','./index.html','./styles.css','./app.js','./cloud-sync.js','./cloud-config.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',event=>{
@@ -15,6 +15,7 @@ self.addEventListener('fetch',event=>{
   if(req.method!=='GET') return;
   const url=new URL(req.url);
   if(url.hostname.includes('supabase.co')) return;
+  if(url.pathname.endsWith('/cloud-config.js')){event.respondWith(fetch(req,{cache:'no-store'}));return;}
   if(req.mode==='navigate'){
     event.respondWith(fetch(req).then(res=>{
       const copy=res.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));return res;

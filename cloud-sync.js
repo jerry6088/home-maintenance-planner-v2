@@ -7,7 +7,7 @@
   const HOUSEHOLD_KEY='hmv2-cloud-household';
   const DISPLAY_KEY='hmv2-cloud-display-name';
 
-  let sb=null, householdId='', channel=null, applyingRemote=false, pushTimer=null, cloudReady=false;
+  let sb=null, householdId='', channel=null, applyingRemote=false, pushTimer=null, cloudReady=false, syncInFlight=false, pendingSync=false;
   let originalSetItem=localStorage.setItem.bind(localStorage);
 
   const $c=id=>document.getElementById(id);
@@ -99,6 +99,8 @@
 
   async function pushCloudState(force=false){
     if(!sb||!householdId||applyingRemote)return;
+    if(syncInFlight){pendingSync=true;return;}
+    syncInFlight=true;
     const session=await getSession(); if(!session)return;
     const payload={
       household_id:householdId,
@@ -107,17 +109,23 @@
       updated_by:session.user.id
     };
     const {error}=await sb.from('household_state').upsert(payload,{onConflict:'household_id'});
-    if(error){console.error(error);setStatus('Sync error','bad');return;}
+    if(error){console.error(error);setStatus('Sync error','bad');syncInFlight=false;return;}
     setStatus('Synced','ok');
+    const stamp=document.getElementById('lastSyncText');
+    if(stamp)stamp.textContent='Last synced '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+    syncInFlight=false;
+    if(pendingSync){pendingSync=false;schedulePush();}
   }
 
   function schedulePush(){
     if(!cloudReady||applyingRemote)return;
     setStatus('Saving…','busy');
     clearTimeout(pushTimer);
-    pushTimer=setTimeout(()=>pushCloudState(),700);
+    pushTimer=setTimeout(()=>pushCloudState(),400);
   }
 
+
+  window.hmCloudChanged=(reason='app-change')=>schedulePush();
   function hookLocalStorage(){
     localStorage.setItem=function(key,val){
       originalSetItem(key,val);
@@ -129,12 +137,13 @@
     if(channel){sb.removeChannel(channel);channel=null;}
     channel=sb.channel(`household-state-${householdId}`)
       .on('postgres_changes',{
-        event:'UPDATE',schema:'public',table:'household_state',
+        event:'*',schema:'public',table:'household_state',
         filter:`household_id=eq.${householdId}`
       },async payload=>{
-        const session=await getSession();
-        if(payload.new?.updated_by && session?.user?.id===payload.new.updated_by)return;
-        if(payload.new?.state)applySnapshot(payload.new.state);
+        if(payload.new?.state){
+          setStatus('Updating…','busy');
+          applySnapshot(payload.new.state);
+        }
       }).subscribe();
   }
 

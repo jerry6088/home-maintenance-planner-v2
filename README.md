@@ -1,20 +1,13 @@
-# Home Maintenance Planner V2
+# V34 Realtime Sync
 
-Static browser-based maintenance planner.
+Fixes automatic family-device syncing.
 
-## Tabs
-- Maintenance
-- Vehicles
-- Power Equipment
-- Home Equipment
+Changes:
+- planner changes trigger automatic cloud saves
+- Supabase realtime listens for all household_state changes
+- same-account changes from a second device are no longer ignored
+- visible Last synced time
+- cloud-config.js bypasses the service-worker cache
+- manual Push/Pull remains available as backup
 
-## Data
-Your edits are stored in the browser's localStorage. This starter build includes the inventory gathered so far and a starter maintenance catalog.
-
-## Run locally
-Open `index.html` in a browser.
-
-## Publish with GitHub Pages
-Upload all files to the root of a GitHub repository, then enable Pages from the main branch/root.
-
-Important: manufacturer schedules for some older equipment are intentionally marked for refinement until the exact engine/operator manual is confirmed.
+Upload all V34 web files to GitHub Pages and test with `?v=34`.
