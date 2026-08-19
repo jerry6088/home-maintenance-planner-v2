@@ -1,17 +1,26 @@
-# V46.1 Family Profile Fix
+# V46.2 Forced Password Change
 
-Fixes the profile identity bug seen on Ashley's login.
+Fixes the missing temporary-password flow.
 
-Problem:
-V46 sometimes selected the first Miller Home household member when setting "Your profile".
-Because Jerry is the owner and usually appears first, Ashley could be signed in with her own email while the app still said "Your profile: Jerry".
+What changes:
+- owner-created family accounts are marked must_change_password=true
+- when that member signs in, the app opens a blocking Change Your Password dialog
+- they cannot dismiss it with Escape
+- after a successful Supabase password update, the app clears the database flag
+- future sign-ins use the new password normally
+- existing accounts are not forced unless you set must_change_password=true
 
-Fix:
-- current profile is selected by the authenticated Supabase user_id
-- startup household selection uses the signed-in user's membership
-- changing your own Family Profile updates the local profile immediately
-- no schema, Edge Function, or cloud-config changes required
+Required one-time Supabase step:
+1. Run `v46-2-force-password-change-migration.sql`.
+2. Redeploy the existing `create-family-account` Edge Function using the included updated index.ts.
+3. Keep Verify JWT with legacy secret OFF for that function.
+4. Upload the V46.2 web files to GitHub.
+5. Leave cloud-config.js untouched.
+6. Open with ?v=462.
 
-Upload/replace the normal web files.
-Do NOT replace cloud-config.js.
-Open with ?v=461.
+For Ashley's already-created account, after running the migration, set her flag once:
+update public.household_members
+set must_change_password = true
+where profile_name = 'Ashley';
+
+Then refresh Ashley's app.

@@ -93,7 +93,7 @@
 
   async function listMemberships(){
     const {data,error}=await sb.from('household_members')
-      .select('household_id,user_id,display_name,profile_name,role,created_at,households(name,invite_code)')
+      .select('household_id,user_id,display_name,profile_name,role,must_change_password,created_at,households(name,invite_code)')
       .order('created_at',{ascending:true});
     if(error)throw error;
     return data||[];
@@ -364,6 +364,50 @@
     });
   }
 
+
+  async function enforcePasswordChangeIfNeeded(member){
+    if(!member?.must_change_password)return;
+    const dlg=$c('forcePasswordDialog');
+    if(dlg && !dlg.open){
+      dlg.showModal();
+      setTimeout(()=>$c('forceNewPassword')?.focus(),50);
+    }
+  }
+
+  async function changeTemporaryPassword(e){
+    e?.preventDefault?.();
+    const p1=$c('forceNewPassword')?.value||'';
+    const p2=$c('forceConfirmPassword')?.value||'';
+    const result=$c('forcePasswordResult');
+    if(p1.length<8){
+      if(result)result.textContent='Use at least 8 characters.';
+      return;
+    }
+    if(p1!==p2){
+      if(result)result.textContent='Passwords do not match.';
+      return;
+    }
+    const btn=$c('forcePasswordSaveBtn');
+    if(btn)btn.disabled=true;
+    if(result)result.textContent='Saving new password…';
+    try{
+      const {error}=await sb.auth.updateUser({password:p1});
+      if(error)throw error;
+      const {error:flagError}=await sb.rpc('clear_my_password_change_flag',{p_household_id:householdId});
+      if(flagError)throw flagError;
+      if(result)result.textContent='Password changed successfully.';
+      setTimeout(()=>{
+        try{$c('forcePasswordDialog')?.close()}catch{}
+        if($c('forceNewPassword'))$c('forceNewPassword').value='';
+        if($c('forceConfirmPassword'))$c('forceConfirmPassword').value='';
+      },500);
+    }catch(err){
+      if(result)result.textContent=err?.message||String(err);
+    }finally{
+      if(btn)btn.disabled=false;
+    }
+  }
+
   async function refreshCloudUI(){
     if(!sb){setStatus('Not configured','off');return;}
 
@@ -416,10 +460,14 @@
     if($c('activeProfileName'))$c('activeProfileName').textContent=linkedProfile||'Not linked';
 
     await renderFamilyProfiles();
+    await enforcePasswordChangeIfNeeded(chosen);
     setStatus('Synced','ok');
   }
 
   function wireUI(){
+    $c('forcePasswordForm')?.addEventListener('submit',changeTemporaryPassword);
+    $c('forcePasswordDialog')?.addEventListener('cancel',e=>e.preventDefault());
+
     $c('cloudOpenBtn')?.addEventListener('click',()=>{
       $c('cloudDialog').showModal();
       refreshCloudUI();

@@ -351,3 +351,9 @@ body.sidebar-collapsed .desktop-sidebar-toggle{transform:rotate(180deg)}
 .password-row{display:grid;grid-template-columns:1fr auto;gap:8px}
 #familyAccountResult code{user-select:all;font-weight:800}
 @media(max-width:520px){.password-row{grid-template-columns:1fr}.password-row button{width:100%}}
+
+/* V46.2 forced temporary-password change */
+.force-password-dialog{max-width:460px;width:calc(100% - 28px)}
+.force-password-dialog::backdrop{background:rgba(0,0,0,.55)}
+.force-password-dialog form{display:grid;gap:12px}
+.force-password-dialog label{display:grid;gap:5px;font-weight:800}
