@@ -1429,7 +1429,9 @@ function showMainView(view){
 
 document.querySelectorAll('#tabs button[data-view]').forEach(b=>b.onclick=()=>showMainView(b.dataset.view));
 window.editAsset=id=>{let a=assets.find(x=>x.id===id);['name','year','type','make','model','serial','meter','meterType','notes'].forEach(k=>$(k).value=a[k]??'');$('assetId').value=id;updateMeterVisibility(a.type);$('assetDialog').showModal()};
-$('addBtn').onclick=()=>{['assetId','name','year','make','model','serial','meter','notes'].forEach(k=>$(k).value='');$('type').value='power';$('meterType').value='hours';updateMeterVisibility('power');$('assetDialog').showModal()};
+const openAddItem=()=>{['assetId','name','year','make','model','serial','meter','notes'].forEach(k=>$(k).value='');$('type').value='power';$('meterType').value='hours';updateMeterVisibility('power');$('assetDialog').showModal()};
+if($('addBtn'))$('addBtn').onclick=openAddItem;
+if($('sidebarAddBtn'))$('sidebarAddBtn').onclick=openAddItem;
 $('type').onchange=()=>updateMeterVisibility($('type').value);
 $('assetForm').onsubmit=e=>{e.preventDefault();let id=$('assetId').value,old=assets.find(a=>a.id===id);let obj={id:id||uid(),name:$('name').value,type:$('type').value,year:$('year').value,make:$('make').value,model:$('model').value,serial:$('serial').value,meter:$('type').value==='home'?'':$('meter').value,meterType:$('type').value==='home'?'none':$('meterType').value,notes:$('notes').value};if(old&&old.name!==obj.name)tasks.forEach(t=>{if(t.asset===old.name)t.asset=obj.name});if(id)assets=assets.map(a=>a.id===id?obj:a);else assets.push(obj);$('assetDialog').close();save()};
 $('cancelAsset').onclick=()=>$('assetDialog').close();
