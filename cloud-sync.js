@@ -315,6 +315,78 @@
     }
   }
 
+
+  async function changeOwnPassword(){
+    const current=($c('accountCurrentPassword')?.value||'');
+    const next=($c('accountNewPassword')?.value||'');
+    const confirm=($c('accountConfirmPassword')?.value||'');
+    const result=$c('changeOwnPasswordResult');
+
+    if(!current){
+      if(result)result.textContent='Enter your current password.';
+      return;
+    }
+    if(next.length<8){
+      if(result)result.textContent='New password must be at least 8 characters.';
+      return;
+    }
+    if(next!==confirm){
+      if(result)result.textContent='New passwords do not match.';
+      return;
+    }
+
+    const btn=$c('changeOwnPasswordBtn');
+    if(btn)btn.disabled=true;
+    if(result)result.textContent='Changing password…';
+
+    try{
+      const session=await getSession();
+      const email=session?.user?.email;
+      if(!email)throw new Error('No signed-in email found.');
+
+      // Verify current password by re-authenticating first.
+      const {error:verifyError}=await sb.auth.signInWithPassword({email,password:current});
+      if(verifyError)throw new Error('Current password is incorrect.');
+
+      const {error:updateError}=await sb.auth.updateUser({password:next});
+      if(updateError)throw updateError;
+
+      // If this was a temporary-password account, clear the forced-change flag.
+      try{
+        await sb.rpc('clear_my_password_change_flag',{p_household_id:householdId});
+      }catch{}
+
+      if($c('accountCurrentPassword'))$c('accountCurrentPassword').value='';
+      if($c('accountNewPassword'))$c('accountNewPassword').value='';
+      if($c('accountConfirmPassword'))$c('accountConfirmPassword').value='';
+      if(result)result.textContent='Password changed successfully ✓';
+    }catch(err){
+      if(result)result.textContent=err?.message||String(err);
+    }finally{
+      if(btn)btn.disabled=false;
+    }
+  }
+
+  async function resetFamilyPassword(userId,profileName){
+    if(!confirm(`Reset ${profileName}'s password? A new temporary password will be created.`))return;
+    try{
+      const {data,error}=await sb.functions.invoke('reset-family-password',{
+        body:{household_id:householdId,user_id:userId}
+      });
+      if(error)throw error;
+      if(data?.error)throw new Error(data.error);
+
+      const temp=data?.temporary_password||'';
+      alert(`${profileName}'s password has been reset.\n\nTemporary password:\n${temp}\n\nGive this password to ${profileName}. They will be required to change it after signing in.`);
+      try{
+        await navigator.clipboard.writeText(temp);
+      }catch{}
+      await renderFamilyProfiles();
+    }catch(err){
+      alert(err?.message||String(err));
+    }
+  }
+
   async function renderFamilyProfiles(){
     const list=$c('familyProfilesList');
     if(!list||!sb||!householdId)return;
@@ -349,9 +421,12 @@
           <strong>${label}</strong>
           <small>${m.role==='owner'?'Owner':'Member'}${isMe?' · signed in':''}</small>
         </div>
-        ${canEdit
-          ? `<select class="family-profile-select" data-profile-user="${m.user_id}">${profileOptions(selected)}</select>`
-          : `<span class="family-profile-linked">${selected||'Not linked'}</span>`}
+        <div class="family-profile-actions">
+          ${canEdit
+            ? `<select class="family-profile-select" data-profile-user="${m.user_id}">${profileOptions(selected)}</select>`
+            : `<span class="family-profile-linked">${selected||'Not linked'}</span>`}
+          ${owner&&!isMe?`<button type="button" class="secondary reset-family-password-btn" data-reset-user="${m.user_id}" data-reset-profile="${selected||label}">Reset Password</button>`:''}
+        </div>
       </div>`;
     }).join('');
 
@@ -361,6 +436,10 @@
         await saveMemberProfile(sel.dataset.profileUser,sel.value);
         sel.disabled=false;
       });
+    });
+
+    list.querySelectorAll('.reset-family-password-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>resetFamilyPassword(btn.dataset.resetUser,btn.dataset.resetProfile||'Family member'));
     });
   }
 
@@ -467,6 +546,7 @@
   function wireUI(){
     $c('forcePasswordForm')?.addEventListener('submit',changeTemporaryPassword);
     $c('forcePasswordDialog')?.addEventListener('cancel',e=>e.preventDefault());
+    $c('changeOwnPasswordBtn')?.addEventListener('click',changeOwnPassword);
 
     $c('cloudOpenBtn')?.addEventListener('click',()=>{
       $c('cloudDialog').showModal();

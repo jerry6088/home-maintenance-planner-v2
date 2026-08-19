@@ -387,6 +387,20 @@
         <div id="familyProfilesList" class="family-profiles-list"></div>
       </div>
       <div class="cloud-sync-health"><span id="realtimeStatusText">Connecting realtime…</span><span id="lastSyncText" class="cloud-last-sync">Waiting for sync…</span></div>
+      <div class="account-password-box">
+        <div class="family-profile-head">
+          <div><small>ACCOUNT</small><h4>Password & Security</h4></div>
+        </div>
+        <p class="muted">Signed-in family members can change their own password here.</p>
+        <div class="password-change-grid">
+          <label>Current password<input id="accountCurrentPassword" type="password" autocomplete="current-password"></label>
+          <label>New password<input id="accountNewPassword" type="password" minlength="8" autocomplete="new-password"></label>
+          <label>Confirm new password<input id="accountConfirmPassword" type="password" minlength="8" autocomplete="new-password"></label>
+        </div>
+        <button id="changeOwnPasswordBtn" type="button">Change My Password</button>
+        <p id="changeOwnPasswordResult" class="muted"></p>
+      </div>
+
       <div class="actions"><button id="pullCloudBtn" type="button" class="secondary">Pull Cloud → This Device</button><button id="pushThisDeviceBtn" type="button" class="secondary">Push This Device → Cloud</button><button id="cloudSignOutBtn" type="button">Sign Out</button></div>
     </section>
   </div>

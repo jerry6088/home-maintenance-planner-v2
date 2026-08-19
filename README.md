@@ -1,26 +1,24 @@
-# V46.2 Forced Password Change
+# V47 Password Management
 
-Fixes the missing temporary-password flow.
+Built from V46.2.
 
-What changes:
-- owner-created family accounts are marked must_change_password=true
-- when that member signs in, the app opens a blocking Change Your Password dialog
-- they cannot dismiss it with Escape
-- after a successful Supabase password update, the app clears the database flag
-- future sign-ins use the new password normally
-- existing accounts are not forced unless you set must_change_password=true
+Adds:
+- signed-in users can change their own password from Cloud Sync -> Password & Security
+- current password is verified before changing it
+- household owner can reset another family member's forgotten password
+- owner reset generates a random temporary password and copies/displays it
+- reset member is marked must_change_password=true
+- no email recovery or SMTP required for owner-assisted recovery
+- existing forced-password-change flow remains in place
+- cloud-config.js is intentionally not included
 
-Required one-time Supabase step:
-1. Run `v46-2-force-password-change-migration.sql`.
-2. Redeploy the existing `create-family-account` Edge Function using the included updated index.ts.
-3. Keep Verify JWT with legacy secret OFF for that function.
-4. Upload the V46.2 web files to GitHub.
-5. Leave cloud-config.js untouched.
-6. Open with ?v=462.
+Required:
+1. V46.2 database migration already applied.
+2. Keep updated create-family-account function deployed.
+3. Deploy new Edge Function reset-family-password from included index.ts.
+4. Verify JWT with legacy secret = OFF for reset-family-password.
+5. Upload V47 web files to GitHub.
+6. Open with ?v=47.
 
-For Ashley's already-created account, after running the migration, set her flag once:
-update public.household_members
-set must_change_password = true
-where profile_name = 'Ashley';
-
-Then refresh Ashley's app.
+Note:
+Supabase also supports email-based password recovery via resetPasswordForEmail, but that flow requires outbound email/SMTP. V47's owner-reset path avoids that dependency for this private family app.
