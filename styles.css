@@ -242,3 +242,6 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 @media(max-width:700px){body{min-height:100dvh}.app-shell{min-height:100dvh}button,input,select,textarea{font-size:16px}}
 
 .cloud-last-sync{font-size:12px;font-weight:800;color:#2146d0;background:#eef3ff;border-radius:999px;padding:6px 9px;display:inline-block;margin:8px 0}
+
+.cloud-sync-health{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.cloud-sync-health>span:first-child{font-size:12px;font-weight:800;color:#2146d0;background:#eef3ff;border-radius:999px;padding:6px 9px}

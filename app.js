@@ -1483,17 +1483,18 @@ $('saveTaskDetailAssignment').onclick=()=>{
 
 render();
 
-/* V34 explicit realtime sync bridge */
+
+
+/* V35 reliable cloud save bridge */
 window.addEventListener('DOMContentLoaded',()=>{
-  document.addEventListener('submit',()=>setTimeout(()=>window.hmCloudChanged?.('submit'),0),true);
+  const notify=reason=>setTimeout(()=>window.hmCloudChanged?.(reason),100);
+
+  document.addEventListener('submit',()=>notify('submit'),true);
   document.addEventListener('change',e=>{
-    if(e.target && ['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)){
-      setTimeout(()=>window.hmCloudChanged?.('change'),0);
-    }
+    if(e.target && ['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))notify('change');
   },true);
   document.addEventListener('click',e=>{
-    if(e.target.closest('button')){
-      setTimeout(()=>window.hmCloudChanged?.('button'),250);
-    }
+    const b=e.target.closest('button');
+    if(b)notify('button');
   },true);
 });
