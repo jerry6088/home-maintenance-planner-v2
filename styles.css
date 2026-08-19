@@ -217,3 +217,8 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 .photo-viewer-dialog>button{float:right;background:#ffffff22;color:white}.photo-viewer-dialog img{display:block;max-width:100%;max-height:76vh;margin:40px auto 10px;object-fit:contain}
 #photoViewerCaption{color:white;text-align:center;padding:8px}.task-detail-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.task-detail-summary .spec-card{margin:0}
 @media(max-width:600px){.task-detail-summary{grid-template-columns:1fr}.detail-footer-actions button{width:100%}}
+
+.task-date-section{border-top:1px solid var(--line);padding-top:15px;margin-top:15px}
+.task-date-section h3{margin:0 0 9px}
+.task-date-section>button{margin-top:8px;background:var(--royal);color:white}
+.week-badge{display:inline-flex;padding:4px 8px;border-radius:999px;background:#eef3ff;color:#2146d0;font-size:12px;font-weight:800;margin-top:5px}

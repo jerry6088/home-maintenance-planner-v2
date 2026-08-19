@@ -225,7 +225,11 @@
 <input id="choreId" type="hidden">
 <label>Chore<input id="choreName" required placeholder="e.g. Take trash to road"></label>
 <label>Preferred / Default Assignee<select id="choreAssignee"></select></label>
-<label>Day<select id="choreDay">
+<label>Schedule<select id="choreScheduleType">
+<option value="day">Specific day</option>
+<option value="week">Entire week</option>
+</select></label>
+<label id="choreDayWrap">Day<select id="choreDay">
 <option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
 </select></label>
 <label>Notes<textarea id="choreNotes" rows="3" placeholder="Optional instructions"></textarea></label>
@@ -241,6 +245,14 @@
       <button type="button" id="closeTaskDetails">✕</button>
     </div>
     <div id="taskDetailBody"></div>
+    <section class="task-date-section">
+      <h3>Assignment & Due Date</h3>
+      <div class="two">
+        <label>Assigned To<select id="taskDetailAssignee"></select></label>
+        <label>Due Date<input id="taskDetailDueDate" type="date"></label>
+      </div>
+      <button id="saveTaskDetailAssignment" type="button">Save Assignment</button>
+    </section>
     <section class="task-notes-section">
       <h3>Task Notes</h3>
       <textarea id="taskDetailNotes" rows="4" placeholder="Add instructions, observations, repair notes, etc."></textarea>
