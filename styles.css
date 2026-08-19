@@ -265,3 +265,50 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
  .today-grid{grid-template-columns:1fr}
  .today-row{align-items:flex-start}
 }
+
+/* V41 UI polish */
+:root{--card-radius:16px;--card-shadow:0 5px 18px rgba(32,54,95,.065)}
+.dashboard-panel,.today-card,.calendar-main-card,.calendar-detail-card,.chore-card,.person-section,.asset-card{
+ border-radius:var(--card-radius)!important;box-shadow:var(--card-shadow)
+}
+button{transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+button:active{transform:scale(.98)}
+.top-sync-badge{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:12px;color:#64748b;padding:6px 8px;border-radius:999px;background:#f4f7fb}
+.top-sync-badge.sync-ok{color:#16834a;background:#edf9f2}
+.top-sync-badge.sync-ok span{display:none}
+.top-sync-badge.sync-error{color:#b42318;background:#fff1f0}
+.desktop-sidebar-toggle{margin-left:auto;border:0;background:transparent;font-size:24px;cursor:pointer}
+body.sidebar-collapsed .sidebar{width:76px}
+body.sidebar-collapsed .main-shell{margin-left:76px}
+body.sidebar-collapsed .sidebar .brand small,
+body.sidebar-collapsed .sidebar .brand h1,
+body.sidebar-collapsed .sidebar .side-nav button span:not(.nav-icon),
+body.sidebar-collapsed .sidebar .sidebar-label,
+body.sidebar-collapsed .sidebar .people-mini-list,
+body.sidebar-collapsed .sidebar .quick-action span,
+body.sidebar-collapsed .sidebar .density-toggle{display:none}
+body.sidebar-collapsed .side-nav button{justify-content:center}
+body.sidebar-collapsed .nav-icon{margin:0;font-size:20px}
+body.sidebar-collapsed .desktop-sidebar-toggle{transform:rotate(180deg)}
+.density-toggle{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.density-toggle button{font-size:11px;padding:7px}
+.density-toggle button.active{font-weight:900;background:#eaf0ff;color:#2146d0}
+.compact-ui .dashboard-panel,.compact-ui .today-card,.compact-ui .chore-card,.compact-ui .asset-card{padding:11px!important}
+.compact-ui .today-row,.compact-ui .person-task{padding:7px 9px!important}
+.compact-ui main{gap:10px}
+.app-loading-skeleton{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.app-loading-skeleton.hidden{display:none}
+.app-loading-skeleton div{height:76px;border-radius:14px;background:linear-gradient(90deg,#eef2f7,#f8fafc,#eef2f7);background-size:200% 100%;animation:hmSkeleton 1.2s linear infinite}
+@keyframes hmSkeleton{to{background-position:-200% 0}}
+.mobile-bottom-nav{display:none}
+@media(max-width:760px){
+ body{padding-bottom:72px}
+ .desktop-sidebar-toggle{display:none}
+ .mobile-bottom-nav{position:fixed;z-index:80;left:0;right:0;bottom:0;height:64px;background:#fff;border-top:1px solid #dfe6f0;display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
+ .mobile-bottom-nav button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#64748b;font-size:18px}
+ .mobile-bottom-nav button small{font-size:10px;font-weight:800}
+ .mobile-bottom-nav button.active{color:#2146d0}
+ .top-sync-badge{margin-left:4px}
+ .top-sync-badge span{display:none}
+ .app-loading-skeleton{grid-template-columns:1fr 1fr}
+}

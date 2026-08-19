@@ -1559,3 +1559,61 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   });
 });
+
+
+/* V41 UI polish — no sync/database architecture changes */
+window.addEventListener('DOMContentLoaded',()=>{
+  const body=document.body;
+  const sidebar=document.getElementById('sidebar');
+
+  // Desktop collapsible sidebar
+  const savedCollapse=localStorage.getItem('hmv2-sidebar-collapsed')==='1';
+  if(savedCollapse)body.classList.add('sidebar-collapsed');
+  document.getElementById('desktopSidebarToggle')?.addEventListener('click',()=>{
+    body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('hmv2-sidebar-collapsed',body.classList.contains('sidebar-collapsed')?'1':'0');
+  });
+
+  // Compact / comfortable density
+  const setDensity=(mode)=>{
+    body.classList.toggle('compact-ui',mode==='compact');
+    localStorage.setItem('hmv2-density',mode);
+    document.getElementById('densityCompact')?.classList.toggle('active',mode==='compact');
+    document.getElementById('densityComfortable')?.classList.toggle('active',mode!=='compact');
+  };
+  setDensity(localStorage.getItem('hmv2-density')||'comfortable');
+  document.getElementById('densityCompact')?.addEventListener('click',()=>setDensity('compact'));
+  document.getElementById('densityComfortable')?.addEventListener('click',()=>setDensity('comfortable'));
+
+  // Mobile bottom navigation
+  document.querySelectorAll('[data-mobile-view]').forEach(b=>b.addEventListener('click',()=>{
+    const v=b.dataset.mobileView;
+    if(typeof showMainView==='function')showMainView(v);
+    document.querySelectorAll('[data-mobile-view]').forEach(x=>x.classList.toggle('active',x.dataset.mobileView===v));
+  }));
+  document.getElementById('mobileMoreBtn')?.addEventListener('click',()=>{ if(typeof openSidebar==='function')openSidebar(); });
+
+  // Phone opens to Today once per fresh app/page load. Desktop remains Dashboard.
+  if(matchMedia('(max-width:760px)').matches && typeof showMainView==='function'){
+    setTimeout(()=>showMainView('today'),0);
+    document.querySelector('[data-mobile-view="today"]')?.classList.add('active');
+  }
+
+  // Quiet cloud indicator mirrors the existing sidebar status.
+  const syncSource=document.getElementById('cloudSidebarStatus');
+  const syncBadge=document.getElementById('topSyncBadge');
+  const updateSyncBadge=()=>{
+    if(!syncSource||!syncBadge)return;
+    const txt=(syncSource.textContent||'').trim();
+    syncBadge.classList.toggle('sync-ok',/synced|connected/i.test(txt));
+    syncBadge.classList.toggle('sync-error',/error|offline|not configured|setup needed/i.test(txt));
+    syncBadge.querySelector('span').textContent=/synced|connected/i.test(txt)?'':txt;
+    syncBadge.title=txt||'Cloud sync';
+  };
+  updateSyncBadge();
+  if(syncSource)new MutationObserver(updateSyncBadge).observe(syncSource,{childList:true,subtree:true,characterData:true});
+
+  // Brief skeleton during initial cloud/local render.
+  const sk=document.getElementById('appLoadingSkeleton');
+  if(sk){sk.classList.remove('hidden');setTimeout(()=>sk.classList.add('hidden'),450);}
+});

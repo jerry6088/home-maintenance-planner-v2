@@ -18,6 +18,7 @@
 <aside id="sidebar" class="sidebar">
   <div class="brand">
     <button id="mobileClose" class="sidebar-close" type="button">✕</button>
+    <button id="desktopSidebarToggle" class="desktop-sidebar-toggle" type="button" title="Collapse sidebar">‹</button>
     <div class="brand-mark">HM</div>
     <div><small>HOME & PROPERTY</small><h1>Maintenance Planner</h1></div>
   </div>
@@ -39,6 +40,11 @@
     <div class="sidebar-label">PEOPLE</div><div id="peopleMiniList" class="people-mini-list"></div>
 <div class="sidebar-label">CLOUD</div>
 <button id="cloudOpenBtn" class="quick-action secondary-quick" type="button">☁ Cloud Sync <span id="cloudSidebarStatus" style="float:right;font-size:10px">Setup needed</span></button>
+<div class="sidebar-label">DISPLAY</div>
+<div class="density-toggle">
+<button id="densityCompact" type="button">Compact</button>
+<button id="densityComfortable" type="button">Comfortable</button>
+</div>
 <div class="sidebar-label">PHONE APP</div>
 <button id="installAppBtn" class="quick-action secondary-quick" type="button">⬇ Install App</button>
 <div class="sidebar-label">QUICK ACTIONS</div>
@@ -53,9 +59,12 @@
 <header class="topbar">
   <button id="mobileMenu" class="mobile-menu" type="button">☰</button>
   <div><small id="pageEyebrow">HOME & PROPERTY</small><h2 id="pageTitle">Dashboard</h2><p id="pageSubtitle">Everything that needs attention, grouped and prioritized.</p></div>
+  <div id="topSyncBadge" class="top-sync-badge" title="Cloud sync">☁ <span>Sync</span></div>
   
 </header>
 <main>
+<div id="appLoadingSkeleton" class="app-loading-skeleton hidden"><div></div><div></div><div></div></div>
+
 
 <section id="maintenance" class="view">
 <div class="stats dashboard-stats">
@@ -357,4 +366,13 @@
 <script src="app.js"></script>
 <script src="cloud-sync.js"></script>
 <script src="pwa-install.js"></script>
+
+<nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+  <button type="button" data-mobile-view="maintenance"><span>▦</span><small>Dashboard</small></button>
+  <button type="button" data-mobile-view="today"><span>☀</span><small>Today</small></button>
+  <button type="button" data-mobile-view="calendar"><span>▣</span><small>Calendar</small></button>
+  <button type="button" data-mobile-view="chores"><span>✓</span><small>Chores</small></button>
+  <button type="button" id="mobileMoreBtn"><span>☰</span><small>More</small></button>
+</nav>
+
 </body></html>

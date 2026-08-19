@@ -1,5 +1,5 @@
 
-const CACHE='home-maintenance-v40';
+const CACHE='home-maintenance-v41';
 const SHELL=['./','./index.html','./styles.css','./app.js','./cloud-sync.js','./cloud-config.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',event=>{

@@ -1,11 +1,18 @@
-# V40 Navigation Cleanup
-Built from V39 baseline.
+# V41 UI Polish
+Built from V40 stable baseline.
 
-Changes:
-- removes only the top-header + Add Item button
-- keeps the existing Add Equipment/Add Item Quick Action in the sidebar
-- moves Weekly Chores directly below Calendar
-- leaves V39 sync and application logic intact
+Included:
+- collapsible desktop sidebar
+- consistent card styling/spacing
+- quieter sync indicator
+- mobile bottom navigation: Dashboard / Today / Calendar / Chores / More
+- Today is the default phone landing page
+- Compact / Comfortable display mode
+- more consistent status presentation
+- brief loading skeleton
+- simplified mobile interaction
+- NO global quick-add button, per request
 
+No cloud database architecture changes.
 cloud-config.js is intentionally not included.
-Open with ?v=40 after deployment.
+Open with ?v=41 after deployment.
