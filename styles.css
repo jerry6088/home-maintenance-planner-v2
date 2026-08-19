@@ -234,3 +234,6 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 .cloud-status-row{padding:10px 12px;border-radius:10px;background:var(--royal-soft);margin-top:12px}
 #cloudStatusText.ok{color:#2f7d46;font-weight:900}#cloudStatusText.busy{color:#a56a00;font-weight:900}#cloudStatusText.bad{color:#a2332d;font-weight:900}#cloudStatusText.off{color:#68748a;font-weight:900}
 #cloudSidebarStatus[data-state="ok"]{color:#d9ffe3}#cloudSidebarStatus[data-state="bad"]{color:#ffd4cf}
+
+.invite-box{border:1px solid var(--line);background:var(--royal-soft);border-radius:10px;padding:11px;margin:10px 0}
+.invite-box p{margin:0 0 8px}.invite-box button{background:var(--royal);color:white}

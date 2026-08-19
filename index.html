@@ -280,25 +280,22 @@
   <div class="detail-shell">
     <div class="detail-head"><div><small>V31 CLOUD</small><h2>Family Cloud Sync</h2><div class="muted">Shared household data, accounts, realtime sync, and cloud task photos.</div></div><button id="cloudCloseBtn" type="button">✕</button></div>
 
-    <section class="cloud-card">
-      <h3>1. Supabase Project</h3>
-      <p class="muted">Run <b>supabase-schema.sql</b> in the Supabase SQL Editor, then enter the Project URL and publishable/anon key below. Never use a service-role key in this browser app.</p>
-      <label>Project URL<input id="cloudProjectUrl" placeholder="https://xxxxx.supabase.co"></label>
-      <label>Publishable / anon key<input id="cloudPublishableKey" type="password" placeholder="sb_publishable_... or anon key"></label>
-      <button id="saveCloudConfig" type="button">Save Cloud Configuration</button>
+    <section id="cloudHostSetupCard" class="cloud-card">
+      <h3>Cloud Setup</h3>
+      <p class="muted">This website has not been connected to Supabase yet. The site owner needs to fill in <b>cloud-config.js</b> once. Family members will not need these values.</p>
     </section>
 
     <div class="cloud-status-row"><b>Status:</b> <span id="cloudStatusText">Setup needed</span></div>
 
     <section id="cloudAuthBlock" class="cloud-card">
-      <h3>2. Family Account</h3>
+      <h3>1. Family Account</h3>
       <label>Email<input id="cloudEmail" type="email"></label>
       <label>Password<input id="cloudPassword" type="password" minlength="6"></label>
       <div class="actions"><button id="cloudSignUpBtn" type="button" class="secondary">Create Account</button><button id="cloudSignInBtn" type="button">Sign In</button></div>
     </section>
 
     <section id="cloudHouseholdBlock" class="cloud-card hidden">
-      <h3>3. Create or Join Household</h3>
+      <h3>2. Create or Join Household</h3>
       <label>Your display name<input id="cloudDisplayName" placeholder="Jerry"></label>
       <div class="two">
         <div><label>New household name<input id="newHouseholdName" value="Home Maintenance"></label><button id="createHouseholdBtn" type="button">Create Household</button></div>
@@ -309,11 +306,16 @@
     <section id="cloudActiveBlock" class="cloud-card hidden">
       <h3>Connected</h3>
       <p><b>Household:</b> <span id="activeHouseholdName"></span><br><b>Invite code:</b> <code id="activeInviteCode"></code><br><b>Signed in:</b> <span id="activeUserEmail"></span></p>
+      <div class="invite-box">
+        <p class="muted">Send your family the planner link and invite code. They only need to create an account and join your household.</p>
+        <button id="copyInviteBtn" type="button">Copy Invite</button>
+      </div>
       <div class="actions"><button id="pullCloudBtn" type="button" class="secondary">Pull Cloud → This Device</button><button id="pushThisDeviceBtn" type="button" class="secondary">Push This Device → Cloud</button><button id="cloudSignOutBtn" type="button">Sign Out</button></div>
     </section>
   </div>
 </dialog>
 
+<script src="cloud-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script src="cloud-sync.js"></script>

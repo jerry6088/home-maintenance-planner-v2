@@ -11,7 +11,11 @@
   let originalSetItem=localStorage.setItem.bind(localStorage);
 
   const $c=id=>document.getElementById(id);
-  const cfg=()=>{try{return JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}catch{return{}}};
+  const cfg=()=>{
+    const hosted=window.HM_CLOUD_CONFIG||{};
+    if(hosted.url && hosted.key && !String(hosted.url).includes('PASTE_') && !String(hosted.key).includes('PASTE_')) return hosted;
+    try{return JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}catch{return{}}
+  };
 
   function setStatus(text, cls=''){
     const el=$c('cloudStatusText'); if(el){el.textContent=text;el.className=cls;}
@@ -248,12 +252,20 @@
 
   function wireUI(){
     $c('cloudOpenBtn')?.addEventListener('click',()=>{$c('cloudDialog').showModal();refreshCloudUI();});
+    const hc=cfg();
+    $c('cloudHostSetupCard')?.classList.toggle('hidden',Boolean(hc.url&&hc.key));
+
     $c('cloudCloseBtn')?.addEventListener('click',()=>{$c('cloudDialog').close();});
-    $c('saveCloudConfig')?.addEventListener('click',()=>{
-      const url=$c('cloudProjectUrl').value.trim(),key=$c('cloudPublishableKey').value.trim();
-      originalSetItem(CFG_KEY,JSON.stringify({url,key}));location.reload();
-    });
-    const c=cfg(); if($c('cloudProjectUrl'))$c('cloudProjectUrl').value=c.url||'';if($c('cloudPublishableKey'))$c('cloudPublishableKey').value=c.key||'';
+    // V32 normally reads cloud-config.js. Legacy per-device configuration remains supported if those fields exist.
+    if($c('saveCloudConfig')){
+      $c('saveCloudConfig').addEventListener('click',()=>{
+        const url=$c('cloudProjectUrl').value.trim(),key=$c('cloudPublishableKey').value.trim();
+        originalSetItem(CFG_KEY,JSON.stringify({url,key}));location.reload();
+      });
+      const c=cfg();
+      if($c('cloudProjectUrl'))$c('cloudProjectUrl').value=c.url||'';
+      if($c('cloudPublishableKey'))$c('cloudPublishableKey').value=c.key||'';
+    }
 
     $c('cloudSignUpBtn')?.addEventListener('click',async()=>{
       const email=$c('cloudEmail').value.trim(),password=$c('cloudPassword').value;
@@ -285,6 +297,12 @@
     });
     $c('pushThisDeviceBtn')?.addEventListener('click',async()=>{if(confirm('Replace the shared cloud data with the data on this device?'))await pushCloudState(true);});
     $c('pullCloudBtn')?.addEventListener('click',async()=>{if(confirm('Replace this device data with the current shared cloud data?'))await pullCloudState(true);});
+    $c('copyInviteBtn')?.addEventListener('click',async()=>{
+      const code=$c('activeInviteCode')?.textContent?.trim()||'';
+      const text=`Home Maintenance Planner\n${location.origin}${location.pathname}\nInvite code: ${code}\n\nCreate an account, sign in, then choose Join Household and enter this code.`;
+      try{await navigator.clipboard.writeText(text);$c('copyInviteBtn').textContent='Copied ✓';setTimeout(()=>$c('copyInviteBtn').textContent='Copy Invite',1200);}
+      catch{prompt('Copy this invite:',text);}
+    });
   }
 
   window.addEventListener('DOMContentLoaded',init);
