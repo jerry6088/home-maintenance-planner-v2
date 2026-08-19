@@ -169,6 +169,35 @@
     return ok;
   };
 
+  // V48.2: write only the chore array atomically on Supabase.
+  // This avoids a whole-household snapshot overwriting or dropping a chore completion.
+  window.hmCloudCommitChores=async(reason='chore-change')=>{
+    if(!cloudReady||applyingRemote||!sb||!householdId){
+      setStatus(navigator.onLine?'Waiting for sync…':'Offline','busy');
+      return false;
+    }
+    clearTimeout(pushTimer);
+    setStatus('Saving chore…','busy');
+    try{
+      const chores=readJSON('hmv2-weekly-chores')||[];
+      const {data,error}=await sb.rpc('update_household_chores',{
+        p_household_id:householdId,
+        p_chores:chores
+      });
+      if(error)throw error;
+      const ts=data||new Date().toISOString();
+      setLastSync(ts,'Saved');
+      setStatus('Synced','ok');
+      try{window.dispatchEvent(new CustomEvent('hm-cloud-commit',{detail:{ok:true,reason}}));}catch{}
+      return true;
+    }catch(err){
+      console.error('V48.2 atomic chore sync failed',err);
+      setStatus(navigator.onLine?'Sync Error':'Offline','bad');
+      try{window.dispatchEvent(new CustomEvent('hm-cloud-commit',{detail:{ok:false,reason,error:String(err)}}));}catch{}
+      return false;
+    }
+  };
+
   function hookStorage(){
     localStorage.setItem=function(key,val){
       originalSetItem(key,val);

@@ -1,22 +1,22 @@
-# V48.1 Chore Sync Fix
+# V48.2 Atomic Chore Sync
 
-Built from V48.
+This is a targeted fix based on live Supabase inspection.
+
+Finding:
+Ashley was the most recent cloud writer, but the shared hmv2-weekly-chores array still contained no completion state. So the completion was being lost before/while writing the whole household snapshot.
 
 Fix:
-- completing or undoing a chore now performs an explicit immediate cloud commit
-- this does not rely only on the generic localStorage/debounce bridge
-- Dashboard shows Saving chore to family / Saved to family ✓ / cloud sync failed
-- receiving devices keep the normal Realtime + 5-second fallback refresh
-- V48 security, local-date fixes, password management, profiles, and UI remain intact
+- chore completion/undo now calls a dedicated Supabase RPC
+- only hmv2-weekly-chores is updated
+- the update is atomic and server-timestamped
+- other household state is preserved
+- receiving devices still use normal Realtime/polling
+- V48 security and usability fixes remain intact
 
-No new SQL migration.
+Required one-time step:
+Run `v48-2-atomic-chore-sync.sql` in Supabase SQL Editor.
+
 No Edge Function changes.
-Keep the V48 security migration applied.
 Do not replace cloud-config.js.
 
-Upload the normal web files and open once with ?v=481.
-
-Test:
-1. On Ashley's phone complete a chore.
-2. Ashley should briefly see Saved to family ✓.
-3. Jerry's computer should update through Realtime or within about 5 seconds.
+Then upload V48.2 and open once with ?v=482.

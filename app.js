@@ -1132,12 +1132,13 @@ function renderChores(){
 async function commitChoreCloud(reason){
  const notice=$('choreSyncNotice');
  if(notice){notice.classList.remove('hidden','sync-ok','sync-bad');notice.textContent='Saving chore to family…'}
- if(typeof window.hmCloudCommit!=='function'){
+ const commitFn=window.hmCloudCommitChores||window.hmCloudCommit;
+ if(typeof commitFn!=='function'){
    window.hmCloudChanged?.(reason);
    if(notice){notice.textContent='Waiting for cloud connection…'}
    return;
  }
- const ok=await window.hmCloudCommit(reason);
+ const ok=await commitFn(reason);
  if(notice){
    notice.textContent=ok?'Saved to family ✓':'Chore saved on this device — cloud sync failed';
    notice.classList.toggle('sync-ok',!!ok);
