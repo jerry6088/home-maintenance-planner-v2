@@ -1019,6 +1019,35 @@ let choreFilter='today';
 function mondayOfWeek(d=new Date()){
  const x=new Date(d);const day=(x.getDay()+6)%7;x.setHours(12,0,0,0);x.setDate(x.getDate()-day);return x.toISOString().slice(0,10);
 }
+
+const CHORE_CAL_MIG='hmv2-chore-calendar-mig-1';
+if(localStorage.getItem(CHORE_CAL_MIG)!=='1'){
+ const wk=mondayOfWeek();
+ chores.forEach(c=>{
+   // Preserve any explicit current-week assignment.
+   if(c.assignmentWeek!==wk && c.assignee){
+     c.assignmentWeek=wk;
+     c.weekAssignee=c.assignee;
+   }
+ });
+ saveChores();
+ localStorage.setItem(CHORE_CAL_MIG,'1');
+}
+
+
+const CHORE_WEEK_ASSIGN_FIX='hmv2-chore-week-assign-fix-2';
+if(localStorage.getItem(CHORE_WEEK_ASSIGN_FIX)!=='1'){
+ const wk=mondayOfWeek();
+ chores.forEach(c=>{
+   if(c.assignmentWeek!==wk){
+     c.assignmentWeek=wk;
+     c.weekAssignee=c.weekAssignee||c.assignee||'';
+   }
+ });
+ saveChores();
+ localStorage.setItem(CHORE_WEEK_ASSIGN_FIX,'1');
+}
+
 function currentDayName(){return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()]}
 function choreDoneThisWeek(c){return c.completedWeek===mondayOfWeek()}
 function saveChores(){localStorage.setItem(CK,JSON.stringify(chores))}
@@ -1042,6 +1071,19 @@ window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completed
 window.editChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;$('choreId').value=c.id;$('choreName').value=c.name;populateAssigneeSelect('choreAssignee',c.assignee||'');$('choreDay').value=c.day;$('choreNotes').value=c.notes||'';$('choreDialogTitle').textContent='Edit Weekly Chore';$('choreDialog').showModal()};
 
 
+
+function calendarTaskStatus(t){
+ const u=taskUrgency(t);
+ return u===0?'overdue':u===1?'due-soon':'upcoming';
+}
+function choreAssignedThisWeek(c){
+ return c.assignmentWeek===mondayOfWeek() && Boolean(c.weekAssignee);
+}
+function effectiveChoreAssignee(c){
+ if(c.assignmentWeek===mondayOfWeek())return c.weekAssignee||'';
+ return '';
+}
+
 let calendarCursor=new Date();
 calendarCursor.setDate(1);
 let selectedCalendarDate='';
@@ -1058,18 +1100,70 @@ function choreDateForWeek(c){
 }
 function calendarItemsForDate(dateStr){
  const items=[];
- tasks.filter(t=>!t.completed&&t.dueDate===dateStr).forEach(t=>items.push({type:'Maintenance',name:t.name,asset:t.asset,assignee:t.assignee||'',status:statusOf(t),id:t.id}));
- chores.filter(c=>c.assignmentWeek===mondayOfWeek()&&choreDateForWeek(c)===dateStr).forEach(c=>items.push({type:'Chore',name:c.name,asset:'Weekly Chores',assignee:c.weekAssignee||'',status:choreDoneThisWeek(c)?'completed':'scheduled',id:c.id}));
+ const today=isoLocal(new Date());
+
+ // 1) Tasks with an actual calendar due date.
+ tasks.filter(t=>!t.completed&&t.dueDate===dateStr).forEach(t=>{
+   items.push({
+     type:'Maintenance',
+     name:t.name,
+     asset:t.asset,
+     assignee:t.assignee||'',
+     status:calendarTaskStatus(t),
+     id:t.id,
+     note:'Scheduled due date'
+   });
+ });
+
+ // 2) Active mileage/hour-based tasks often do not have dueDate.
+ // Put currently overdue / due-soon meter-based work on TODAY so it is visible.
+ if(dateStr===today){
+   tasks.filter(t=>{
+     if(t.completed||t.dueDate)return false;
+     const s=calendarTaskStatus(t);
+     return s==='overdue'||s==='due-soon';
+   }).forEach(t=>{
+     if(!items.some(x=>x.type==='Maintenance'&&x.id===t.id)){
+       items.push({
+         type:'Maintenance',
+         name:t.name,
+         asset:t.asset,
+         assignee:t.assignee||'',
+         status:calendarTaskStatus(t),
+         id:t.id,
+         note:'Due by mileage / hours'
+       });
+     }
+   });
+ }
+
+ // 3) Weekly chores assigned for the current week.
+ chores.filter(c=>{
+   if(!choreAssignedThisWeek(c))return false;
+   return choreDateForWeek(c)===dateStr;
+ }).forEach(c=>{
+   items.push({
+     type:'Chore',
+     name:c.name,
+     asset:'Weekly Chores',
+     assignee:effectiveChoreAssignee(c),
+     status:choreDoneThisWeek(c)?'completed':'scheduled',
+     id:c.id,
+     note:c.day
+   });
+ });
+
  return items;
 }
 function renderCalendar(){
+ if(!selectedCalendarDate)selectedCalendarDate=isoLocal(new Date());
  const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth();
  $('calendarMonthLabel').textContent=calendarCursor.toLocaleDateString(undefined,{month:'long',year:'numeric'});
  const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());
  let cells='',today=isoLocal(new Date());
  for(let i=0;i<42;i++){
    const d=new Date(start);d.setDate(start.getDate()+i);
-   const ds=isoLocal(d),items=calendarItemsForDate(ds);
+   const ds=isoLocal(d);let items=[];try{items=calendarItemsForDate(ds)}catch(err){console.error('Calendar item error',err)}
    const maint=items.some(x=>x.type==='Maintenance'),chore=items.some(x=>x.type==='Chore'),overdue=items.some(x=>x.status==='overdue');
    cells+=`<button type="button" class="calendar-day ${d.getMonth()!==m?'other-month':''} ${ds===today?'today':''} ${ds===selectedCalendarDate?'selected':''}" onclick="selectCalendarDate('${ds}')"><span class="calendar-date-num">${d.getDate()}</span><span class="calendar-count">${items.length?`${items.length} item${items.length===1?'':'s'}`:''}</span><span class="calendar-dots">${overdue?'<span class="calendar-dot dot-overdue"></span>':''}${maint?'<span class="calendar-dot dot-maint"></span>':''}${chore?'<span class="calendar-dot dot-chore"></span>':''}</span></button>`;
  }
@@ -1083,7 +1177,7 @@ window.selectCalendarDate=function(ds){
 function renderCalendarDayDetails(ds){
  const items=calendarItemsForDate(ds);
  const label=new Date(ds+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
- $('calendarDayDetails').innerHTML=`<h3>${esc(label)}</h3>`+(items.length?items.map(i=>`<div class="calendar-detail-item"><strong>${esc(i.name)}</strong><div class="calendar-detail-meta">${esc(i.type)} · ${esc(i.asset)}${i.assignee?` · Assigned to ${esc(i.assignee)}`:''}</div><div class="person-task-actions" style="margin-top:8px">${i.type==='Maintenance'?`<button onclick="completeTask('${i.id}')">✓ Complete</button><button class="secondary" onclick="editTask('${i.id}')">Edit</button>`:`<button onclick="completeChore('${i.id}');renderCalendar()">✓ Complete</button><button class="secondary" onclick="editChore('${i.id}')">Edit Chore</button>`}</div></div>`).join(''):'<p class="muted">Nothing scheduled for this day.</p>');
+ $('calendarDayDetails').innerHTML=`<h3>${esc(label)}</h3>`+(items.length?items.map(i=>`<div class="calendar-detail-item"><strong>${esc(i.name)}</strong><div class="calendar-detail-meta">${esc(i.type)} · ${esc(i.asset)}${i.assignee?` · Assigned to ${esc(i.assignee)}`:''}${i.note?` · ${esc(i.note)}`:''}</div><div class="person-task-actions" style="margin-top:8px">${i.type==='Maintenance'?`<button onclick="completeTask('${i.id}')">✓ Complete</button><button class="secondary" onclick="editTask('${i.id}')">Edit</button>`:`<button onclick="completeChore('${i.id}');renderCalendar()">✓ Complete</button><button class="secondary" onclick="editChore('${i.id}')">Edit Chore</button>`}</div></div>`).join(''):'<p class="muted">Nothing scheduled for this day.</p>');
 }
 
 let currentStatusFilter='all';
@@ -1175,7 +1269,7 @@ window.openPersonTasks=function(person){
 
 let currentPerson='';
 function personTaskStatus(t){
- const s=statusOf(t);
+ const s=calendarTaskStatus(t);
  if(s==='overdue')return 'overdue';
  if(s==='due-soon')return 'due-soon';
  return 'upcoming';
@@ -1186,8 +1280,8 @@ function renderPersonDashboard(person){
  $('personSubtitle').textContent='Maintenance, seasonal work and weekly chores assigned to '+person+'.';
 
  const mt=tasks.filter(t=>!t.completed&&t.assignee===person);
- const overdue=mt.filter(t=>statusOf(t)==='overdue').length;
- const soon=mt.filter(t=>statusOf(t)==='due-soon').length;
+ const overdue=mt.filter(t=>calendarTaskStatus(t)==='overdue').length;
+ const soon=mt.filter(t=>calendarTaskStatus(t)==='due-soon').length;
  const pc=chores.filter(c=>c.assignee===person);
  const today=pc.filter(c=>c.day===currentDayName()&&!choreDoneThisWeek(c)).length;
  const doneWeek=pc.filter(choreDoneThisWeek).length;
