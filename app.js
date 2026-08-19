@@ -1483,18 +1483,29 @@ $('saveTaskDetailAssignment').onclick=()=>{
 
 render();
 
-
-
-/* V35 reliable cloud save bridge */
+/* V36 safe cloud save bridge
+   Only actual data mutations trigger cloud writes.
+   Navigation/menu/dialog clicks do NOT push stale device state. */
 window.addEventListener('DOMContentLoaded',()=>{
-  const notify=reason=>setTimeout(()=>window.hmCloudChanged?.(reason),100);
+  const wrap=(name)=>{
+    const fn=window[name];
+    if(typeof fn!=='function' || fn.__hmV36Wrapped)return;
+    const wrapped=function(...args){
+      const result=fn.apply(this,args);
+      setTimeout(()=>window.hmCloudChanged?.(name),50);
+      return result;
+    };
+    wrapped.__hmV36Wrapped=true;
+    window[name]=wrapped;
+  };
 
-  document.addEventListener('submit',()=>notify('submit'),true);
-  document.addEventListener('change',e=>{
-    if(e.target && ['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))notify('change');
-  },true);
-  document.addEventListener('click',e=>{
-    const b=e.target.closest('button');
-    if(b)notify('button');
-  },true);
+  ['save','saveChores'].forEach(wrap);
+
+  // These forms mutate arrays/localStorage directly in their existing handlers.
+  ['assetForm','taskForm','completeForm','seasonalForm','choreForm'].forEach(id=>{
+    const form=document.getElementById(id);
+    if(form){
+      form.addEventListener('submit',()=>setTimeout(()=>window.hmCloudChanged?.(id),100));
+    }
+  });
 });

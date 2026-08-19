@@ -116,6 +116,15 @@
     setStatus('Saving…','busy');
 
     try{
+      if(!force){
+        const remote=await getCloudRow();
+        if(remote?.updated_at && lastCloudTs && new Date(remote.updated_at)>new Date(lastCloudTs)){
+          setStatus('Updating…','busy');
+          applySnapshot(remote.state,remote.updated_at);
+          return;
+        }
+      }
+
       const now=new Date().toISOString();
       const payload={
         household_id:householdId,
@@ -137,7 +146,7 @@
     if(!cloudReady||applyingRemote)return;
     clearTimeout(pushTimer);
     setStatus('Saving…','busy');
-    pushTimer=setTimeout(()=>pushNow(false),450);
+    pushTimer=setTimeout(()=>pushNow(false),700);
   }
 
   window.hmCloudChanged=(reason='app-change')=>schedulePush(reason);
