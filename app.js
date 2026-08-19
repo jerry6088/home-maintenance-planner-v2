@@ -1509,3 +1509,55 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   });
 });
+
+
+/* V38 Today/Dashboard/Calendar integration */
+window.addEventListener('DOMContentLoaded',()=>{
+  const safeCall=name=>{try{ if(typeof window[name]==='function') window[name](); }catch(e){ console.warn(name,e); }};
+
+  // Re-render all task-dependent views after chores/tasks change.
+  const refreshAll=()=>{
+    safeCall('render');
+    safeCall('renderChores');
+    safeCall('renderCalendar');
+    try{ window.renderToday?.(); }catch{}
+  };
+
+  // Wrap persistence functions so daily chore changes flow everywhere.
+  ['saveChores'].forEach(name=>{
+    const fn=window[name];
+    if(typeof fn==='function' && !fn.__v38Wrapped){
+      const w=function(...args){
+        const out=fn.apply(this,args);
+        setTimeout(refreshAll,0);
+        return out;
+      };
+      w.__v38Wrapped=true;
+      window[name]=w;
+    }
+  });
+
+  // Chore form submission can mutate before/after saveChores depending on build.
+  const choreForm=document.getElementById('choreForm');
+  choreForm?.addEventListener('submit',()=>setTimeout(refreshAll,100));
+
+  // Completion / undo controls also need immediate refresh.
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('button');
+    if(!b)return;
+    const txt=(b.textContent||'').toLowerCase();
+    if(txt.includes('complete')||txt.includes('undo')||txt.includes('save')){
+      setTimeout(refreshAll,150);
+    }
+  },true);
+
+  // Give today.js access to the app's current data/functions where possible.
+  window.HM_APP_BRIDGE={
+    getTasks:()=>{ try{return typeof tasks!=='undefined'?tasks:JSON.parse(localStorage.getItem('hmv2-tasks')||'[]')}catch{return[]} },
+    getChores:()=>{ try{return typeof chores!=='undefined'?chores:JSON.parse(localStorage.getItem('hmv2-weekly-chores')||'[]')}catch{return[]} },
+    mondayOfWeek:()=>{ try{return typeof mondayOfWeek==='function'?mondayOfWeek():''}catch{return''} },
+    choreDateForWeek:c=>{ try{return typeof choreDateForWeek==='function'?choreDateForWeek(c):''}catch{return''} },
+    choreDoneThisWeek:c=>{ try{return typeof choreDoneThisWeek==='function'?choreDoneThisWeek(c):false}catch{return false} },
+    effectiveChoreAssignee:c=>{ try{return typeof effectiveChoreAssignee==='function'?effectiveChoreAssignee(c):(c.weekAssignee||c.assignee||'')}catch{return c.assignee||''} }
+  };
+});

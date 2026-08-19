@@ -265,3 +265,7 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
  .today-grid{grid-template-columns:1fr}
  .today-stat span{font-size:26px}
 }
+
+/* V38 Today visibility */
+#page-today.hidden{display:none!important}
+#page-today:not(.hidden){display:block!important}

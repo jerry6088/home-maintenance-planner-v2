@@ -1,19 +1,15 @@
-# V37 Today
+# V38 Today + Chore Integration Fix
 
-Built on the stable V36 Safe Sync foundation.
-
-New:
-- Today page in the left navigation
-- Due Today
-- Overdue
-- Today's Chores
-- My Tasks
-- mobile-friendly summary cards
-- refresh button
-- V36 cloud sync left intact
+Fixes:
+- Today page actually appears in the left navigation
+- Today page uses the planner's real chore model
+- daily/weekly chore changes refresh Dashboard
+- chore changes refresh Calendar
+- Today view refreshes after chore changes
+- V36 Safe Sync remains the cloud foundation
 
 IMPORTANT:
-cloud-config.js is intentionally NOT included. Leave the working GitHub cloud-config.js untouched.
+cloud-config.js is not included. Leave the working GitHub cloud-config.js untouched.
 
 Upload/replace:
 index.html
@@ -27,4 +23,4 @@ manifest.webmanifest
 icon-192.png
 icon-512.png
 
-Open with ?v=37 after deployment.
+Open with ?v=38.
