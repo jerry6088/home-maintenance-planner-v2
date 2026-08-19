@@ -1,24 +1,22 @@
-# V47 Password Management
+# V48 Stability & Usability
 
-Built from V46.2.
+Built from V47.
 
-Adds:
-- signed-in users can change their own password from Cloud Sync -> Password & Security
-- current password is verified before changing it
-- household owner can reset another family member's forgotten password
-- owner reset generates a random temporary password and copies/displays it
-- reset member is marked must_change_password=true
-- no email recovery or SMTP required for owner-assisted recovery
-- existing forced-password-change flow remains in place
-- cloud-config.js is intentionally not included
+Highlights:
+- security hardening for household roles
+- local-date/timezone fixes
+- chore completion records include who completed the chore and timestamp
+- completed chores remain visible and sort below unfinished chores
+- Dashboard shows Today's Chores progress
+- Cloud Sync renamed Account & Family in the UI
+- app version shown in sidebar
+- friendly Online/Offline status
+- service-worker update banner with Reload button
+- working V47 password management and V43/V42 chore behavior retained
+- existing whole-household cloud snapshot sync architecture intentionally retained for stability
 
 Required:
-1. V46.2 database migration already applied.
-2. Keep updated create-family-account function deployed.
-3. Deploy new Edge Function reset-family-password from included index.ts.
-4. Verify JWT with legacy secret = OFF for reset-family-password.
-5. Upload V47 web files to GitHub.
-6. Open with ?v=47.
+Run `v48-security-hardening.sql` once in Supabase SQL Editor before relying on V48.
 
-Note:
-Supabase also supports email-based password recovery via resetPasswordForEmail, but that flow requires outbound email/SMTP. V47's owner-reset path avoids that dependency for this private family app.
+No new Edge Function is required.
+cloud-config.js is intentionally not included.

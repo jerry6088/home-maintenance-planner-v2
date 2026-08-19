@@ -365,3 +365,16 @@ body.sidebar-collapsed .desktop-sidebar-toggle{transform:rotate(180deg)}
 .family-profile-actions{display:grid;gap:6px}
 .reset-family-password-btn{width:100%}
 @media(max-width:760px){.password-change-grid{grid-template-columns:1fr}}
+
+/* V48 Stability & Usability */
+.dashboard-chore-progress{margin:0 0 10px;font-weight:800}
+.app-version-row{display:flex;justify-content:space-between;gap:8px;padding:8px 4px 2px;font-size:11px;opacity:.7}
+#connectionFriendly.offline{font-weight:900}
+.app-update-banner{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:0 8px 30px rgba(0,0,0,.14)}
+.app-update-banner.hidden{display:none}
+.app-update-banner button{white-space:nowrap}
+.today-row.chore-completed-visible{order:20}
+.completed-badge{display:inline-block;margin-top:5px}
+@media(max-width:760px){
+ .app-update-banner{top:8px;width:calc(100% - 24px);justify-content:space-between}
+}

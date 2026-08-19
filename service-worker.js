@@ -1,10 +1,9 @@
 
-const CACHE='home-maintenance-v47';
+const CACHE='home-maintenance-v48';
 const SHELL=['./','./index.html','./styles.css','./app.js','./cloud-sync.js','./cloud-config.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)));
-  self.skipWaiting();
 });
 self.addEventListener('activate',event=>{
   event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
@@ -29,4 +28,8 @@ self.addEventListener('fetch',event=>{
     return;
   }
   event.respondWith(caches.match(req).then(cached=>cached||fetch(req)));
+});
+
+self.addEventListener('message',event=>{
+  if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });

@@ -1,6 +1,10 @@
 const AK='hmv2-assets',TK='hmv2-tasks',HK='hmv2-history',MIG='hmv2-parts-migration-1';
 const uid=()=>crypto.randomUUID();
-const todayISO=()=>new Date().toISOString().slice(0,10);
+const todayISO=()=>{
+ const d=new Date();
+ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+ return `${y}-${m}-${day}`;
+};
 const assetsSeed=[
 {id:uid(),name:'2014 Volkswagen Passat',type:'vehicle',year:2014,make:'Volkswagen',model:'Passat',serial:'1VWBS7A36EC087006',meter:'',meterType:'miles',notes:''},
 {id:uid(),name:'2021 Ford Expedition',type:'vehicle',year:2021,make:'Ford',model:'Expedition',serial:'1FMJK1JT1MEA80457',meter:'',meterType:'miles',notes:''},
@@ -644,7 +648,7 @@ localStorage.setItem(AK,JSON.stringify(assets));localStorage.setItem(TK,JSON.str
 const $=x=>document.getElementById(x);
 function save(){localStorage.setItem(AK,JSON.stringify(assets));localStorage.setItem(TK,JSON.stringify(tasks));localStorage.setItem(HK,JSON.stringify(history));render()}
 function esc(x=''){return String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function addMonths(dateStr,n){const d=new Date((dateStr||todayISO())+'T12:00:00');d.setMonth(d.getMonth()+(+n||0));return d.toISOString().slice(0,10)}
+function addMonths(dateStr,n){const d=new Date((dateStr||todayISO())+'T12:00:00');d.setMonth(d.getMonth()+(+n||0));return isoLocal(d)}
 function isHomeAsset(name){return assetByName(name)?.type==='home'}
 function meterLabel(a){if(!a||a.type==='home'||a.meterType==='none')return'';return a.meter!==''?`${a.meter} ${a.meterType}`:'Meter not entered'}
 function renderAssets(type,id){$(id).innerHTML=assets.filter(a=>a.type===type).map(a=>`<article class="card"><h3>${esc(a.name)}</h3><div class="muted">${esc([a.year,a.make,a.model].filter(Boolean).join(' '))}</div>${type!=='home'?`<div class="meter">${esc(meterLabel(a))}</div>`:''}${a.serial?`<div class="muted">VIN / Serial: ${esc(a.serial)}</div>`:''}<p>${esc(a.notes||'')}</p><div class="card-actions"><button onclick="openEquipmentDetail('${a.id}','recommended')">Recommended</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','parts')">Parts List</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','manuals')">Manuals</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','specs')">Specs</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','history')">History</button><button class="secondary" onclick="editAsset('${a.id}')">Edit</button></div></article>`).join('')}
@@ -924,7 +928,7 @@ window.assignSeasonal=function(id,person){
 
 window.completeSeasonal=function(id){
  const x=seasonal.find(s=>s.id===id);if(!x)return;
- x.lastDone=new Date().toISOString().slice(0,10);
+ x.lastDone=todayISO();
  history.push({id:uid(),asset:'Home / Seasonal',task:x.name,assignee:x.assignee||'',date:x.lastDone,meter:'',meterType:'',cost:'',notes:x.season+' seasonal maintenance completed'});
  localStorage.setItem(SK,JSON.stringify(seasonal));
  localStorage.setItem(HK,JSON.stringify(history));
@@ -976,7 +980,7 @@ function populateAssigneeSelect(selectId,selected=''){
 function addMonthsSafe(dateStr,n){
  const d=new Date((dateStr||todayISO())+'T12:00:00');
  d.setMonth(d.getMonth()+(+n||0));
- return d.toISOString().slice(0,10);
+ return isoLocal(d);
 }
 function previousHistoryForTask(taskId,excludeId){
  return history.filter(h=>h.taskId===taskId&&h.id!==excludeId).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0]||null;
@@ -1029,7 +1033,7 @@ const CK='hmv2-weekly-chores';
 let chores=JSON.parse(localStorage.getItem(CK)||'null')||[];
 let choreFilter='today';
 function mondayOfWeek(d=new Date()){
- const x=new Date(d);const day=(x.getDay()+6)%7;x.setHours(12,0,0,0);x.setDate(x.getDate()-day);return x.toISOString().slice(0,10);
+ const x=new Date(d);const day=(x.getDay()+6)%7;x.setHours(12,0,0,0);x.setDate(x.getDate()-day);return isoLocal(x);
 }
 
 const CHORE_CAL_MIG='hmv2-chore-calendar-mig-1';
@@ -1062,15 +1066,31 @@ if(localStorage.getItem(CHORE_WEEK_ASSIGN_FIX)!=='1'){
 
 function currentDayName(){return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()]}
 function choreCompletionDates(c){if(!Array.isArray(c.completedDates))c.completedDates=[];return c.completedDates}
+function choreCompletionRecords(c){if(!Array.isArray(c.completionRecords))c.completionRecords=[];return c.completionRecords}
+function choreCompletionRecord(c,dateStr){return choreCompletionRecords(c).slice().reverse().find(r=>r.date===dateStr)||null}
+function recordChoreCompletion(c,dateStr){
+ const records=choreCompletionRecords(c);
+ const actor=currentSignedDisplayName()||effectiveChoreAssignee(c)||c.assignee||'Family member';
+ const existing=records.find(r=>r.date===dateStr);
+ const rec={date:dateStr,completedBy:actor,completedAt:new Date().toISOString()};
+ if(existing)Object.assign(existing,rec);else records.push(rec);
+}
+function removeChoreCompletionRecord(c,dateStr){c.completionRecords=choreCompletionRecords(c).filter(r=>r.date!==dateStr)}
 function choreDoneOnDate(c,dateStr){return c.scheduleType==='week'?choreCompletionDates(c).includes(dateStr):c.completedWeek===mondayOfWeek()}
 function choreDoneToday(c){return choreDoneOnDate(c,todayISO())}
 function choreDoneThisWeek(c){return c.scheduleType==='week'?choreDoneToday(c):c.completedWeek===mondayOfWeek()}
 function saveChores(){localStorage.setItem(CK,JSON.stringify(chores))}
 const CHORE_DAILY_COMPLETION_MIG='hmv2-chore-daily-completion-v42';
 if(localStorage.getItem(CHORE_DAILY_COMPLETION_MIG)!=='1'){
- chores.forEach(c=>{if(!Array.isArray(c.completedDates))c.completedDates=[];});
+ chores.forEach(c=>{if(!Array.isArray(c.completedDates))c.completedDates=[];if(!Array.isArray(c.completionRecords))c.completionRecords=[];});
  saveChores();
  localStorage.setItem(CHORE_DAILY_COMPLETION_MIG,'1');
+}
+const CHORE_COMPLETION_ACTOR_MIG='hmv2-chore-completion-actor-v48';
+if(localStorage.getItem(CHORE_COMPLETION_ACTOR_MIG)!=='1'){
+ chores.forEach(c=>{if(!Array.isArray(c.completionRecords))c.completionRecords=[];});
+ saveChores();
+ localStorage.setItem(CHORE_COMPLETION_ACTOR_MIG,'1');
 }
 
 const CHORE_SCOPE_MIG='hmv2-chore-scope-v1';
@@ -1107,10 +1127,10 @@ function renderChores(){
  if(choreFilter==='today')list=list.filter(c=>!(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))&&(c.scheduleType==='week'||c.day===currentDayName()));
  else if(choreFilter==='week')list=list.filter(c=>c.scheduleType==='week'||!choreDoneThisWeek(c));
  list.sort((a,b)=>['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(a.day)-['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(b.day));
- $('choreList').innerHTML=list.length?list.map(c=>`<article class="chore-card ${choreDoneThisWeek(c)?'done':''} clickable-task" onclick="openTaskDetails('chore','${c.id}')"><div><div class="chore-title">${esc(c.name)}</div><div class="chore-meta">${c.scheduleType==='week'?'Every day this week':esc(c.day)}${c.weekDueDate?` · Due ${esc(c.weekDueDate)}`:''} · ${(effectiveChoreAssignee(c)||c.assignee)?`Assigned to ${esc(effectiveChoreAssignee(c)||c.assignee)}`:'Unassigned'}</div>${c.notes?`<p>${esc(c.notes)}</p>`:''}${(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))?`<span class="completed-badge">✓ Completed ${c.scheduleType==='week'?'today':'this week'}</span>`:''}</div><div class="chore-actions">${(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))?`<button class="undo-chore" onclick="event.stopPropagation();undoChore('${c.id}')">↶ Undo</button>`:`<button onclick="event.stopPropagation();completeChore('${c.id}')">✓ Complete${c.scheduleType==='week'?' Today':''}</button>`}<button class="edit-chore" onclick="event.stopPropagation();editChore('${c.id}')">Edit</button></div></article>`).join(''):'<div class="dashboard-panel"><p class="muted">No chores to show for this view.</p></div>';
+ $('choreList').innerHTML=list.length?list.map(c=>`<article class="chore-card ${choreDoneThisWeek(c)?'done':''} clickable-task" onclick="openTaskDetails('chore','${c.id}')"><div><div class="chore-title">${esc(c.name)}</div><div class="chore-meta">${c.scheduleType==='week'?'Every day this week':esc(c.day)}${c.weekDueDate?` · Due ${esc(c.weekDueDate)}`:''} · ${(effectiveChoreAssignee(c)||c.assignee)?`Assigned to ${esc(effectiveChoreAssignee(c)||c.assignee)}`:'Unassigned'}</div>${c.notes?`<p>${esc(c.notes)}</p>`:''}${(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))?(()=>{const r=choreCompletionRecord(c,c.completedDate||todayISO());return `<span class="completed-badge">✓ Completed${r?.completedBy?' by '+esc(r.completedBy):''}${r?.completedAt?' · '+new Date(r.completedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):''}</span>`})():''}</div><div class="chore-actions">${(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))?`<button class="undo-chore" onclick="event.stopPropagation();undoChore('${c.id}')">↶ Undo</button>`:`<button onclick="event.stopPropagation();completeChore('${c.id}')">✓ Complete${c.scheduleType==='week'?' Today':''}</button>`}<button class="edit-chore" onclick="event.stopPropagation();editChore('${c.id}')">Edit</button></div></article>`).join(''):'<div class="dashboard-panel"><p class="muted">No chores to show for this view.</p></div>';
 }
-window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;if(c.scheduleType==='week'){const d=todayISO();const dates=choreCompletionDates(c);if(!dates.includes(d))dates.push(d);c.completedDate=d}else{c.completedWeek=mondayOfWeek();c.completedDate=todayISO()}saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
-window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;if(c.scheduleType==='week'){const d=todayISO();c.completedDates=choreCompletionDates(c).filter(x=>x!==d);if(c.completedDate===d)c.completedDate=''}else{c.completedWeek='';c.completedDate=''}saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
+window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){const dates=choreCompletionDates(c);if(!dates.includes(d))dates.push(d);c.completedDate=d}else{c.completedWeek=mondayOfWeek();c.completedDate=d}recordChoreCompletion(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
+window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){c.completedDates=choreCompletionDates(c).filter(x=>x!==d);if(c.completedDate===d)c.completedDate=''}else{c.completedWeek='';c.completedDate=''}removeChoreCompletionRecord(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
 window.editChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;$('choreId').value=c.id;$('choreName').value=c.name;populateAssigneeSelect('choreAssignee',c.assignee||'');$('choreScheduleType').value=c.scheduleType||'day';$('choreDay').value=c.day||'Monday';$('choreDayWrap').classList.toggle('hidden',(c.scheduleType||'day')==='week');$('choreNotes').value=c.notes||'';$('choreDialogTitle').textContent='Edit Weekly Chore';$('choreDialog').showModal()};
 
 
@@ -1229,7 +1249,11 @@ function renderToday(){
  const ds=isoLocal(new Date());
  const dueToday=tasks.filter(t=>!t.completed&&t.dueDate===ds);
  const overdue=tasks.filter(t=>!t.completed&&calendarTaskStatus(t)==='overdue');
- const ch=todayChores();
+ const ch=todayChores().slice().sort((a,b)=>{
+  const ad=a.scheduleType==='week'?choreDoneToday(a):choreDoneThisWeek(a);
+  const bd=b.scheduleType==='week'?choreDoneToday(b):choreDoneThisWeek(b);
+  return Number(ad)-Number(bd) || (a.name||'').localeCompare(b.name||'');
+ });
  const me=currentSignedDisplayName();
  const mineMaint=me?tasks.filter(t=>!t.completed&&t.assignee===me&&(t.dueDate===ds||calendarTaskStatus(t)==='overdue'||calendarTaskStatus(t)==='due-soon')):[];
  const mineChores=me?ch.filter(c=>effectiveChoreAssignee(c)===me):[];
@@ -1237,17 +1261,20 @@ function renderToday(){
  $('todayDateLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
  $('todayDueCount').textContent=dueToday.length;
  $('todayOverdueCount').textContent=overdue.length;
- $('todayChoreCount').textContent=ch.filter(c=>!(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))).length;
+ const completedChores=ch.filter(c=>c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c)).length;
+ $('todayChoreCount').textContent=ch.length-completedChores;
+ const dbProgress=$('dashboardChoreProgress');
+ if(dbProgress)dbProgress.textContent=`Today's Chores: ${completedChores} of ${ch.length} completed`;
  $('todayMineCount').textContent=mineMaint.length+mineChores.length;
 
  $('todayDueList').innerHTML=dueToday.length?dueToday.map(t=>todayRowHTML('Maintenance',t.name,`${t.asset}${t.assignee?' · '+t.assignee:''}` ,t.id,'maintenance')).join(''):'<p class="muted">Nothing due today.</p>';
  $('todayOverdueList').innerHTML=overdue.length?overdue.map(t=>todayRowHTML('Overdue',t.name,`${t.asset}${t.assignee?' · '+t.assignee:''}`,t.id,'maintenance')).join(''):'<p class="muted">No overdue maintenance.</p>';
- $('todayChoreList').innerHTML=ch.length?ch.map(c=>{const done=c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c);return `<article class="today-row clickable-task ${done?'chore-completed-visible':''}" onclick="openTaskDetails('chore','${c.id}')"><div><strong>${done?'✓ ':''}${esc(c.name)}</strong><div class="muted">${esc(effectiveChoreAssignee(c)||'Unassigned')} · ${esc(c.scheduleType==='week'?'Every day this week':c.day)}${done?' · Completed today':''}</div></div><span class="today-kind">${done?'Completed':'Chore'}</span></article>`}).join(''):'<p class="muted">No chores scheduled today.</p>';
+ $('todayChoreList').innerHTML=ch.length?ch.map(c=>{const done=c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c);return `<article class="today-row clickable-task ${done?'chore-completed-visible':''}" onclick="openTaskDetails('chore','${c.id}')"><div><strong>${done?'✓ ':''}${esc(c.name)}</strong><div class="muted">${esc(effectiveChoreAssignee(c)||'Unassigned')} · ${esc(c.scheduleType==='week'?'Every day this week':c.day)}${done?(()=>{const r=choreCompletionRecord(c,c.completedDate||todayISO());return ` · Completed${r?.completedBy?' by '+r.completedBy:''}`})():''}</div></div><span class="today-kind">${done?'Completed':'Chore'}</span></article>`}).join(''):'<p class="muted">No chores scheduled today.</p>';
  const mine=[...mineMaint.map(t=>({kind:'Maintenance',name:t.name,meta:t.asset,id:t.id,type:'maintenance'})),...mineChores.map(c=>({kind:'Chore',name:c.name,meta:c.scheduleType==='week'?'Entire week':c.day,id:c.id,type:'chore'}))];
  $('todayMineList').innerHTML=mine.length?mine.map(x=>todayRowHTML(x.kind,x.name,x.meta,x.id,x.type)).join(''):'<p class="muted">Nothing assigned to you today.</p>';
 
  const db=$('dashboardTodayChores');
- if(db)db.innerHTML=ch.length?ch.slice(0,8).map(c=>{const done=c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c);return `<article class="today-row clickable-task ${done?'chore-completed-visible':''}" onclick="openTaskDetails('chore','${c.id}')"><div><strong>${done?'✓ ':''}${esc(c.name)}</strong><div class="muted">${esc(effectiveChoreAssignee(c)||'Unassigned')} · ${esc(c.scheduleType==='week'?'Every day this week':c.day)}${done?' · Completed today':''}</div></div><span class="today-kind">${done?'Completed':'Chore'}</span></article>`}).join(''):'<p class="muted">No chores scheduled today.</p>';
+ if(db)db.innerHTML=ch.length?ch.slice(0,8).map(c=>{const done=c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c);return `<article class="today-row clickable-task ${done?'chore-completed-visible':''}" onclick="openTaskDetails('chore','${c.id}')"><div><strong>${done?'✓ ':''}${esc(c.name)}</strong><div class="muted">${esc(effectiveChoreAssignee(c)||'Unassigned')} · ${esc(c.scheduleType==='week'?'Every day this week':c.day)}${done?(()=>{const r=choreCompletionRecord(c,c.completedDate||todayISO());return ` · Completed${r?.completedBy?' by '+r.completedBy:''}`})():''}</div></div><span class="today-kind">${done?'Completed':'Chore'}</span></article>`}).join(''):'<p class="muted">No chores scheduled today.</p>';
 }
 
 function renderCalendar(){
@@ -1504,7 +1531,7 @@ setPageMeta('maintenance');
 $('addChoreBtn').onclick=()=>{$('choreForm').reset();$('choreId').value='';populateAssigneeSelect('choreAssignee','');$('choreScheduleType').value='day';$('choreDayWrap').classList.remove('hidden');$('choreDialogTitle').textContent='Add Weekly Chore';$('choreDialog').showModal()};
 $('cancelChore').onclick=()=>$('choreDialog').close();
 $('choreScheduleType').onchange=()=>$('choreDayWrap').classList.toggle('hidden',$('choreScheduleType').value==='week');
-$('choreForm').onsubmit=e=>{e.preventDefault();const id=$('choreId').value;const data={id:id||uid(),name:$('choreName').value.trim(),assignee:$('choreAssignee').value||'',day:$('choreDay').value,scheduleType:$('choreScheduleType').value,notes:$('choreNotes').value.trim(),completedWeek:'',completedDate:'',completedDates:[],assignmentWeek:'',weekAssignee:'',weekDueDate:''};if(id){const old=chores.find(c=>c.id===id);if(old){data.completedWeek=old.completedWeek||'';data.completedDate=old.completedDate||'';data.completedDates=Array.isArray(old.completedDates)?old.completedDates:[];data.assignmentWeek=old.assignmentWeek||'';data.weekAssignee=old.weekAssignee||'';data.weekDueDate=old.weekDueDate||'';Object.assign(old,data)}}else chores.push(data);saveChores();$('choreDialog').close();renderChores();render();renderCalendar();renderToday()};
+$('choreForm').onsubmit=e=>{e.preventDefault();const id=$('choreId').value;const data={id:id||uid(),name:$('choreName').value.trim(),assignee:$('choreAssignee').value||'',day:$('choreDay').value,scheduleType:$('choreScheduleType').value,notes:$('choreNotes').value.trim(),completedWeek:'',completedDate:'',completedDates:[],completionRecords:[],assignmentWeek:'',weekAssignee:'',weekDueDate:''};if(id){const old=chores.find(c=>c.id===id);if(old){data.completedWeek=old.completedWeek||'';data.completedDate=old.completedDate||'';data.completedDates=Array.isArray(old.completedDates)?old.completedDates:[];data.completionRecords=Array.isArray(old.completionRecords)?old.completionRecords:[];data.assignmentWeek=old.assignmentWeek||'';data.weekAssignee=old.weekAssignee||'';data.weekDueDate=old.weekDueDate||'';Object.assign(old,data)}}else chores.push(data);saveChores();$('choreDialog').close();renderChores();render();renderCalendar();renderToday()};
 document.querySelectorAll('[data-chore-filter]').forEach(b=>b.onclick=()=>{choreFilter=b.dataset.choreFilter;renderChores()});
 $('chorePersonFilter').onchange=renderChores;
 

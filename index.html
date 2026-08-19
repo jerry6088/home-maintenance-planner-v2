@@ -39,7 +39,7 @@
   <div class="sidebar-section">
     <div class="sidebar-label">PEOPLE</div><div id="peopleMiniList" class="people-mini-list"></div>
 <div class="sidebar-label">CLOUD</div>
-<button id="cloudOpenBtn" class="quick-action secondary-quick" type="button">☁ Cloud Sync <span id="cloudSidebarStatus" style="float:right;font-size:10px">Setup needed</span></button>
+<button id="cloudOpenBtn" class="quick-action secondary-quick" type="button">👤 Account & Family <span id="cloudSidebarStatus" style="float:right;font-size:10px">Setup needed</span></button>
 <div class="sidebar-label">DISPLAY</div>
 <div class="density-toggle">
 <button id="densityCompact" type="button">Compact</button>
@@ -51,10 +51,15 @@
     <button id="sidebarAddBtn" class="quick-action" type="button">＋ Add Equipment</button>
     <button id="sidebarDashboardBtn" class="quick-action secondary-quick" type="button">▦ Dashboard</button>
   </div>
+  <div class="app-version-row"><span id="appVersionLabel">v48</span><span id="connectionFriendly">Online</span></div>
 </aside>
 
 <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
+<div id="appUpdateBanner" class="app-update-banner hidden">
+  <span>A new app version is ready.</span>
+  <button id="reloadForUpdateBtn" type="button">Reload</button>
+</div>
 <div class="main-shell">
 <header class="topbar">
   <button id="mobileMenu" class="mobile-menu" type="button">☰</button>
@@ -77,6 +82,7 @@
 
 <section class="dashboard-panel today-chores-panel">
 <div class="section-title-row"><div><small>TODAY</small><h2>Today's Chores</h2></div><button id="openTodayFromDashboard" type="button" class="secondary">View Today</button></div>
+<p id="dashboardChoreProgress" class="dashboard-chore-progress muted"></p>
 <div id="dashboardTodayChores" class="today-list"></div>
 </section>
 
@@ -325,7 +331,7 @@
 
 <dialog id="cloudDialog" class="wide-dialog">
   <div class="detail-shell">
-    <div class="detail-head"><div><small>V31 CLOUD</small><h2>Family Cloud Sync</h2><div class="muted">Shared household data, accounts, realtime sync, and cloud task photos.</div></div><button id="cloudCloseBtn" type="button">✕</button></div>
+    <div class="detail-head"><div><small>V31 CLOUD</small><h2>Account & Family</h2><div class="muted">Shared household data, accounts, realtime sync, and cloud task photos.</div></div><button id="cloudCloseBtn" type="button">✕</button></div>
 
     <section id="cloudHostSetupCard" class="cloud-card">
       <h3>Cloud Setup</h3>
