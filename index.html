@@ -175,6 +175,43 @@
   <div id="chorePeopleSummary" class="chore-people-summary"></div>
   <div id="choreList" class="chore-list"></div>
 </section>
+
+<section id="page-today" class="page today-page hidden">
+  <div class="page-header">
+    <div>
+      <h1>Today</h1>
+      <p id="todayDateLabel">Your household plan for today.</p>
+    </div>
+    <button id="todayRefreshBtn" class="primary-btn" type="button">↻ Refresh</button>
+  </div>
+
+  <div class="today-summary-grid">
+    <div class="today-stat"><span id="todayDueCount">0</span><small>Due Today</small></div>
+    <div class="today-stat"><span id="todayOverdueCount">0</span><small>Overdue</small></div>
+    <div class="today-stat"><span id="todayChoreCount">0</span><small>Chores</small></div>
+    <div class="today-stat"><span id="todayMineCount">0</span><small>My Tasks</small></div>
+  </div>
+
+  <div class="today-grid">
+    <div class="today-card">
+      <h2>Due Today</h2>
+      <div id="todayDueList" class="today-list"></div>
+    </div>
+    <div class="today-card">
+      <h2>Overdue</h2>
+      <div id="todayOverdueList" class="today-list"></div>
+    </div>
+    <div class="today-card">
+      <h2>Today's Chores</h2>
+      <div id="todayChoreList" class="today-list"></div>
+    </div>
+    <div class="today-card">
+      <h2>My Tasks</h2>
+      <div id="todayMineList" class="today-list"></div>
+    </div>
+  </div>
+</section>
+
 </main>
 </div>
 </div>
@@ -330,4 +367,5 @@
 <script src="app.js"></script>
 <script src="cloud-sync.js"></script>
 <script src="pwa-install.js"></script>
+<script src="today.js"></script>
 </body></html>
