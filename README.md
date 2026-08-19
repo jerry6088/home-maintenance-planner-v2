@@ -1,33 +1,25 @@
-# V44 Family Profiles
+# V46 Owner Account Setup
 
-Built from V43.
+Built from V45/V44.
 
-## What V44 adds
-- links each Supabase login to one family profile name
-- owner can link every household login to Jerry, Ashley, Jack, Jace, Wesley, Waylon, Roger, etc.
-- regular members can set/change only their own linked profile
-- Today -> My Tasks uses the linked login profile
-- the linked person is marked "Me" in the people list
-- tasks/chores remain assigned by family name, so once a login is linked, those assignments automatically belong to that login
-- existing V43 chores, Dashboard, Calendar, Today, phone UI, and cloud state syncing remain intact
+New workflow:
+- household owner creates family accounts directly
+- choose family profile + email + temporary password
+- optional secure temporary-password generator
+- no invitation email
+- no confirmation email
+- no SMTP required
+- account is email-confirmed by the server and usable immediately
+- account is automatically linked to Miller Home and the selected Family Profile
+- only the database-confirmed household owner can use the privileged account-creation endpoint
+- service-role key remains server-side in Supabase
 
-## One-time Supabase step
-Run `v44-family-profiles-migration.sql` in Supabase SQL Editor.
+Required:
+1. V44 Family Profiles migration already applied.
+2. Deploy Edge Function `create-family-account` using included index.ts.
+3. In that function's Settings, keep "Verify JWT with legacy secret" OFF.
+4. Custom SMTP may be turned OFF.
+5. Upload V46 web files to GitHub, leaving cloud-config.js untouched.
+6. Open with ?v=46.
 
-Do this before testing the Family Profiles controls.
-
-## GitHub upload
-Upload/replace the normal V44 web files.
-
-IMPORTANT: `cloud-config.js` is intentionally NOT included. Leave your working GitHub cloud-config.js untouched.
-
-## How to use
-1. Run the migration SQL.
-2. Open the planner with `?v=44`.
-3. Open Cloud Sync.
-4. Under Family Profiles, link your login to Jerry.
-5. When Ashley joins with her own account, link her login to Ashley.
-6. Repeat for other family members.
-7. Assign a task/chore to Ashley, Jace, etc. Their login will automatically recognize those items as their My Tasks.
-
-The household owner can manage all profile links. Other members can manage only their own profile link.
+See V46-SETUP.md.

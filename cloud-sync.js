@@ -269,6 +269,44 @@
     return true;
   }
 
+
+
+  function makeTempPassword(){
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+    const bytes=new Uint32Array(14);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes,n=>chars[n%chars.length]).join('');
+  }
+
+  async function createFamilyAccount(){
+    const email=($c('newAccountEmail')?.value||'').trim();
+    const password=($c('newAccountPassword')?.value||'').trim();
+    const profileName=($c('newAccountProfile')?.value||'').trim();
+    const result=$c('familyAccountResult');
+    if(!profileName||!email||password.length<8){
+      if(result)result.textContent='Choose a family member, enter an email, and use a password with at least 8 characters.';
+      return;
+    }
+    const btn=$c('createFamilyAccountBtn');
+    if(btn)btn.disabled=true;
+    if(result)result.textContent='Creating account…';
+    try{
+      const {data,error}=await sb.functions.invoke('create-family-account',{
+        body:{household_id:householdId,email,password,profile_name:profileName}
+      });
+      if(error)throw error;
+      if(data?.error)throw new Error(data.error);
+      if(result)result.innerHTML=`<strong>${profileName}'s account is ready.</strong><br>Email: ${email}<br>Temporary password: <code>${password}</code><br>Give these to ${profileName}. They can sign in immediately.`;
+      if($c('newAccountEmail'))$c('newAccountEmail').value='';
+      if($c('newAccountPassword'))$c('newAccountPassword').value='';
+      await renderFamilyProfiles();
+    }catch(err){
+      if(result)result.textContent=err?.message||String(err);
+    }finally{
+      if(btn)btn.disabled=false;
+    }
+  }
+
   async function renderFamilyProfiles(){
     const list=$c('familyProfilesList');
     if(!list||!sb||!householdId)return;
@@ -284,6 +322,14 @@
 
     const me=members.find(m=>m.user_id===session.user.id);
     const owner=me?.role==='owner';
+    const accountBox=$c('ownerAccountBox');
+    if(accountBox)accountBox.classList.toggle('hidden',!owner);
+    const accountProfile=$c('newAccountProfile');
+    if(accountProfile){
+      const linked=new Set(members.map(m=>(m.profile_name||m.display_name||'').trim()).filter(Boolean));
+      const people=Array.isArray(window.HM_PEOPLE)?window.HM_PEOPLE:[];
+      accountProfile.innerHTML=people.map(p=>`<option value="${p.replace(/"/g,'&quot;')}" ${linked.has(p)?'disabled':''}>${p}${linked.has(p)?' · account exists':''}</option>`).join('');
+    }
 
     list.innerHTML=members.map(m=>{
       const selected=m.profile_name||m.display_name||'';
@@ -441,6 +487,11 @@
     });
 
     $c('refreshProfilesBtn')?.addEventListener('click',async()=>{await renderFamilyProfiles();await refreshCloudUI();});
+    $c('createFamilyAccountBtn')?.addEventListener('click',createFamilyAccount);
+    $c('generateTempPasswordBtn')?.addEventListener('click',()=>{
+      const p=makeTempPassword();
+      if($c('newAccountPassword'))$c('newAccountPassword').value=p;
+    });
 
     $c('copyInviteBtn')?.addEventListener('click',async()=>{
       const code=$c('activeInviteCode')?.textContent?.trim()||'';

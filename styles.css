@@ -337,3 +337,17 @@ body.sidebar-collapsed .desktop-sidebar-toggle{transform:rotate(180deg)}
  .family-profile-row{grid-template-columns:1fr}
  .family-profile-linked{text-align:left}
 }
+
+/* V45 Easy Family Invite */
+.family-invite-box{margin:12px 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.family-invite-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin:10px 0}
+.family-invite-grid label{display:grid;gap:5px;font-weight:800}
+#familyInviteResult{margin:8px 0 0}
+@media(max-width:600px){.family-invite-grid{grid-template-columns:1fr}}
+
+/* V46 owner-created family accounts */
+.family-account-grid{display:grid;gap:10px;margin:10px 0}
+.family-account-grid label{display:grid;gap:5px;font-weight:800}
+.password-row{display:grid;grid-template-columns:1fr auto;gap:8px}
+#familyAccountResult code{user-select:all;font-weight:800}
+@media(max-width:520px){.password-row{grid-template-columns:1fr}.password-row button{width:100%}}

@@ -358,6 +358,25 @@
         <button id="copyInviteBtn" type="button">Copy Invite</button>
       </div>
 
+      <div id="ownerAccountBox" class="family-invite-box hidden">
+        <div class="family-profile-head">
+          <div><small>OWNER</small><h4>Add Family Account</h4></div>
+        </div>
+        <p class="muted">Create a family member's login directly. No invite email or confirmation email is sent.</p>
+        <div class="family-account-grid">
+          <label>Family member<select id="newAccountProfile"></select></label>
+          <label>Email<input id="newAccountEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
+          <label>Temporary password
+            <div class="password-row">
+              <input id="newAccountPassword" type="text" autocomplete="new-password" placeholder="At least 8 characters">
+              <button id="generateTempPasswordBtn" type="button" class="secondary">Generate</button>
+            </div>
+          </label>
+        </div>
+        <button id="createFamilyAccountBtn" type="button">Create Family Account</button>
+        <p id="familyAccountResult" class="muted"></p>
+      </div>
+
       <div class="family-profile-box">
         <div class="family-profile-head">
           <div><small>LOGIN LINK</small><h4>Family Profiles</h4></div>
