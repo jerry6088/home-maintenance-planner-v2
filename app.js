@@ -1060,8 +1060,17 @@ if(localStorage.getItem(CHORE_WEEK_ASSIGN_FIX)!=='1'){
 }
 
 function currentDayName(){return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()]}
-function choreDoneThisWeek(c){return c.completedWeek===mondayOfWeek()}
+function choreCompletionDates(c){if(!Array.isArray(c.completedDates))c.completedDates=[];return c.completedDates}
+function choreDoneOnDate(c,dateStr){return c.scheduleType==='week'?choreCompletionDates(c).includes(dateStr):c.completedWeek===mondayOfWeek()}
+function choreDoneToday(c){return choreDoneOnDate(c,todayISO())}
+function choreDoneThisWeek(c){return c.scheduleType==='week'?choreDoneToday(c):c.completedWeek===mondayOfWeek()}
 function saveChores(){localStorage.setItem(CK,JSON.stringify(chores))}
+const CHORE_DAILY_COMPLETION_MIG='hmv2-chore-daily-completion-v42';
+if(localStorage.getItem(CHORE_DAILY_COMPLETION_MIG)!=='1'){
+ chores.forEach(c=>{if(!Array.isArray(c.completedDates))c.completedDates=[];});
+ saveChores();
+ localStorage.setItem(CHORE_DAILY_COMPLETION_MIG,'1');
+}
 
 const CHORE_SCOPE_MIG='hmv2-chore-scope-v1';
 if(localStorage.getItem(CHORE_SCOPE_MIG)!=='1'){
@@ -1091,16 +1100,16 @@ function renderChores(){
   $('chorePersonFilter').value=pf;
  }
  document.querySelectorAll('[data-chore-filter]').forEach(b=>b.classList.toggle('active',b.dataset.choreFilter===choreFilter));
- const done=chores.filter(choreDoneThisWeek).length;
- $('choreProgress').textContent=`${done} of ${chores.length} complete`;
+ const done=chores.filter(c=>c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c)).length;
+ $('choreProgress').textContent=`${done} of ${chores.length} complete today`;
  let list=chores.filter(c=>!pf||c.assignee===pf);
- if(choreFilter==='today')list=list.filter(c=>!choreDoneThisWeek(c)&&(c.scheduleType==='week'||c.day===currentDayName()));
- else if(choreFilter==='week')list=list.filter(c=>!choreDoneThisWeek(c));
+ if(choreFilter==='today')list=list.filter(c=>!(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))&&(c.scheduleType==='week'||c.day===currentDayName()));
+ else if(choreFilter==='week')list=list.filter(c=>c.scheduleType==='week'||!choreDoneThisWeek(c));
  list.sort((a,b)=>['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(a.day)-['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(b.day));
- $('choreList').innerHTML=list.length?list.map(c=>`<article class="chore-card ${choreDoneThisWeek(c)?'done':''} clickable-task" onclick="openTaskDetails('chore','${c.id}')"><div><div class="chore-title">${esc(c.name)}</div><div class="chore-meta">${c.scheduleType==='week'?'Entire week':esc(c.day)}${c.weekDueDate?` · Due ${esc(c.weekDueDate)}`:''} · ${(effectiveChoreAssignee(c)||c.assignee)?`Assigned to ${esc(effectiveChoreAssignee(c)||c.assignee)}`:'Unassigned'}</div>${c.notes?`<p>${esc(c.notes)}</p>`:''}${choreDoneThisWeek(c)?'<span class="completed-badge">✓ Completed this week</span>':''}</div><div class="chore-actions">${choreDoneThisWeek(c)?`<button class="undo-chore" onclick="event.stopPropagation();undoChore('${c.id}')">↶ Undo</button>`:`<button onclick="event.stopPropagation();completeChore('${c.id}')">✓ Complete</button>`}<button class="edit-chore" onclick="event.stopPropagation();editChore('${c.id}')">Edit</button></div></article>`).join(''):'<div class="dashboard-panel"><p class="muted">No chores to show for this view.</p></div>';
+ $('choreList').innerHTML=list.length?list.map(c=>`<article class="chore-card ${choreDoneThisWeek(c)?'done':''} clickable-task" onclick="openTaskDetails('chore','${c.id}')"><div><div class="chore-title">${esc(c.name)}</div><div class="chore-meta">${c.scheduleType==='week'?'Every day this week':esc(c.day)}${c.weekDueDate?` · Due ${esc(c.weekDueDate)}`:''} · ${(effectiveChoreAssignee(c)||c.assignee)?`Assigned to ${esc(effectiveChoreAssignee(c)||c.assignee)}`:'Unassigned'}</div>${c.notes?`<p>${esc(c.notes)}</p>`:''}${(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))?`<span class="completed-badge">✓ Completed ${c.scheduleType==='week'?'today':'this week'}</span>`:''}</div><div class="chore-actions">${(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))?`<button class="undo-chore" onclick="event.stopPropagation();undoChore('${c.id}')">↶ Undo</button>`:`<button onclick="event.stopPropagation();completeChore('${c.id}')">✓ Complete${c.scheduleType==='week'?' Today':''}</button>`}<button class="edit-chore" onclick="event.stopPropagation();editChore('${c.id}')">Edit</button></div></article>`).join(''):'<div class="dashboard-panel"><p class="muted">No chores to show for this view.</p></div>';
 }
-window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek=mondayOfWeek();c.completedDate=todayISO();saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
-window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek='';c.completedDate='';saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
+window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;if(c.scheduleType==='week'){const d=todayISO();const dates=choreCompletionDates(c);if(!dates.includes(d))dates.push(d);c.completedDate=d}else{c.completedWeek=mondayOfWeek();c.completedDate=todayISO()}saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
+window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;if(c.scheduleType==='week'){const d=todayISO();c.completedDates=choreCompletionDates(c).filter(x=>x!==d);if(c.completedDate===d)c.completedDate=''}else{c.completedWeek='';c.completedDate=''}saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
 window.editChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;$('choreId').value=c.id;$('choreName').value=c.name;populateAssigneeSelect('choreAssignee',c.assignee||'');$('choreScheduleType').value=c.scheduleType||'day';$('choreDay').value=c.day||'Monday';$('choreDayWrap').classList.toggle('hidden',(c.scheduleType||'day')==='week');$('choreNotes').value=c.notes||'';$('choreDialogTitle').textContent='Edit Weekly Chore';$('choreDialog').showModal()};
 
 
@@ -1186,7 +1195,7 @@ function calendarItemsForDate(dateStr){
      name:c.name,
      asset:'Weekly Chores',
      assignee:effectiveChoreAssignee(c),
-     status:choreDoneThisWeek(c)?'completed':'scheduled',
+     status:choreDoneOnDate(c,dateStr)?'completed':'scheduled',
      id:c.id,
      note:c.day
    });
@@ -1197,7 +1206,7 @@ function calendarItemsForDate(dateStr){
 
 function todayChores(){
  const ds=isoLocal(new Date());
- return chores.filter(c=>choreAssignedThisWeek(c)&&!choreDoneThisWeek(c)&&(
+ return chores.filter(c=>choreAssignedThisWeek(c)&&!(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))&&(
    c.scheduleType==='week' || choreEffectiveDueDate(c)===ds
  ));
 }
@@ -1396,8 +1405,8 @@ function renderPersonDashboard(person){
  const overdue=mt.filter(t=>calendarTaskStatus(t)==='overdue').length;
  const soon=mt.filter(t=>calendarTaskStatus(t)==='due-soon').length;
  const pc=chores.filter(c=>c.assignee===person);
- const today=pc.filter(c=>!choreDoneThisWeek(c)&&(c.scheduleType==='week'||c.day===currentDayName())).length;
- const doneWeek=pc.filter(choreDoneThisWeek).length;
+ const today=pc.filter(c=>!(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))&&(c.scheduleType==='week'||c.day===currentDayName())).length;
+ const doneWeek=pc.filter(c=>c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c)).length;
  $('personOverdue').textContent=overdue;$('personDueSoon').textContent=soon;$('personChoresToday').textContent=today;$('personDoneWeek').textContent=doneWeek;
 
  const sorted=mt.slice().sort((a,b)=>{const rank={overdue:0,'due-soon':1,upcoming:2};return rank[personTaskStatus(a)]-rank[personTaskStatus(b)]});
@@ -1488,7 +1497,7 @@ setPageMeta('maintenance');
 $('addChoreBtn').onclick=()=>{$('choreForm').reset();$('choreId').value='';populateAssigneeSelect('choreAssignee','');$('choreScheduleType').value='day';$('choreDayWrap').classList.remove('hidden');$('choreDialogTitle').textContent='Add Weekly Chore';$('choreDialog').showModal()};
 $('cancelChore').onclick=()=>$('choreDialog').close();
 $('choreScheduleType').onchange=()=>$('choreDayWrap').classList.toggle('hidden',$('choreScheduleType').value==='week');
-$('choreForm').onsubmit=e=>{e.preventDefault();const id=$('choreId').value;const data={id:id||uid(),name:$('choreName').value.trim(),assignee:$('choreAssignee').value||'',day:$('choreDay').value,scheduleType:$('choreScheduleType').value,notes:$('choreNotes').value.trim(),completedWeek:'',completedDate:'',assignmentWeek:'',weekAssignee:'',weekDueDate:''};if(id){const old=chores.find(c=>c.id===id);if(old){data.completedWeek=old.completedWeek||'';data.completedDate=old.completedDate||'';data.assignmentWeek=old.assignmentWeek||'';data.weekAssignee=old.weekAssignee||'';data.weekDueDate=old.weekDueDate||'';Object.assign(old,data)}}else chores.push(data);saveChores();$('choreDialog').close();renderChores();render();renderCalendar();renderToday()};
+$('choreForm').onsubmit=e=>{e.preventDefault();const id=$('choreId').value;const data={id:id||uid(),name:$('choreName').value.trim(),assignee:$('choreAssignee').value||'',day:$('choreDay').value,scheduleType:$('choreScheduleType').value,notes:$('choreNotes').value.trim(),completedWeek:'',completedDate:'',completedDates:[],assignmentWeek:'',weekAssignee:'',weekDueDate:''};if(id){const old=chores.find(c=>c.id===id);if(old){data.completedWeek=old.completedWeek||'';data.completedDate=old.completedDate||'';data.completedDates=Array.isArray(old.completedDates)?old.completedDates:[];data.assignmentWeek=old.assignmentWeek||'';data.weekAssignee=old.weekAssignee||'';data.weekDueDate=old.weekDueDate||'';Object.assign(old,data)}}else chores.push(data);saveChores();$('choreDialog').close();renderChores();render();renderCalendar();renderToday()};
 document.querySelectorAll('[data-chore-filter]').forEach(b=>b.onclick=()=>{choreFilter=b.dataset.choreFilter;renderChores()});
 $('chorePersonFilter').onchange=renderChores;
 

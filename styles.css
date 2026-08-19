@@ -312,3 +312,6 @@ body.sidebar-collapsed .desktop-sidebar-toggle{transform:rotate(180deg)}
  .top-sync-badge span{display:none}
  .app-loading-skeleton{grid-template-columns:1fr 1fr}
 }
+
+/* V42 daily weekly chores */
+.chore-card.done{opacity:.8}
