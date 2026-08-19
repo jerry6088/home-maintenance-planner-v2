@@ -4,5 +4,5 @@
 // NEVER put a service_role key here.
 window.HM_CLOUD_CONFIG = {
   url: https://gnyuigmuzvodobbvdhrp.supabase.co
-  key: sb_publishable_2Bzt-JAF74bz9hleWUkH1A_Gd1kEe9f
+  sb_publishable_2Bzt-JAF74bz9hleWUkH1A_Gd1kEe9f
 };
