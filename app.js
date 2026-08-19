@@ -1129,8 +1129,24 @@ function renderChores(){
  list.sort((a,b)=>['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(a.day)-['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(b.day));
  $('choreList').innerHTML=list.length?list.map(c=>`<article class="chore-card ${choreDoneThisWeek(c)?'done':''} clickable-task" onclick="openTaskDetails('chore','${c.id}')"><div><div class="chore-title">${esc(c.name)}</div><div class="chore-meta">${c.scheduleType==='week'?'Every day this week':esc(c.day)}${c.weekDueDate?` · Due ${esc(c.weekDueDate)}`:''} · ${(effectiveChoreAssignee(c)||c.assignee)?`Assigned to ${esc(effectiveChoreAssignee(c)||c.assignee)}`:'Unassigned'}</div>${c.notes?`<p>${esc(c.notes)}</p>`:''}${(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))?(()=>{const r=choreCompletionRecord(c,c.completedDate||todayISO());return `<span class="completed-badge">✓ Completed${r?.completedBy?' by '+esc(r.completedBy):''}${r?.completedAt?' · '+new Date(r.completedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):''}</span>`})():''}</div><div class="chore-actions">${(c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c))?`<button class="undo-chore" onclick="event.stopPropagation();undoChore('${c.id}')">↶ Undo</button>`:`<button onclick="event.stopPropagation();completeChore('${c.id}')">✓ Complete${c.scheduleType==='week'?' Today':''}</button>`}<button class="edit-chore" onclick="event.stopPropagation();editChore('${c.id}')">Edit</button></div></article>`).join(''):'<div class="dashboard-panel"><p class="muted">No chores to show for this view.</p></div>';
 }
-window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){const dates=choreCompletionDates(c);if(!dates.includes(d))dates.push(d);c.completedDate=d}else{c.completedWeek=mondayOfWeek();c.completedDate=d}recordChoreCompletion(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
-window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){c.completedDates=choreCompletionDates(c).filter(x=>x!==d);if(c.completedDate===d)c.completedDate=''}else{c.completedWeek='';c.completedDate=''}removeChoreCompletionRecord(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
+async function commitChoreCloud(reason){
+ const notice=$('choreSyncNotice');
+ if(notice){notice.classList.remove('hidden','sync-ok','sync-bad');notice.textContent='Saving chore to family…'}
+ if(typeof window.hmCloudCommit!=='function'){
+   window.hmCloudChanged?.(reason);
+   if(notice){notice.textContent='Waiting for cloud connection…'}
+   return;
+ }
+ const ok=await window.hmCloudCommit(reason);
+ if(notice){
+   notice.textContent=ok?'Saved to family ✓':'Chore saved on this device — cloud sync failed';
+   notice.classList.toggle('sync-ok',!!ok);
+   notice.classList.toggle('sync-bad',!ok);
+   if(ok)setTimeout(()=>notice.classList.add('hidden'),2200);
+ }
+}
+window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){const dates=choreCompletionDates(c);if(!dates.includes(d))dates.push(d);c.completedDate=d}else{c.completedWeek=mondayOfWeek();c.completedDate=d}recordChoreCompletion(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar();commitChoreCloud('chore-complete')};
+window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){c.completedDates=choreCompletionDates(c).filter(x=>x!==d);if(c.completedDate===d)c.completedDate=''}else{c.completedWeek='';c.completedDate=''}removeChoreCompletionRecord(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar();commitChoreCloud('chore-undo')};
 window.editChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;$('choreId').value=c.id;$('choreName').value=c.name;populateAssigneeSelect('choreAssignee',c.assignee||'');$('choreScheduleType').value=c.scheduleType||'day';$('choreDay').value=c.day||'Monday';$('choreDayWrap').classList.toggle('hidden',(c.scheduleType||'day')==='week');$('choreNotes').value=c.notes||'';$('choreDialogTitle').textContent='Edit Weekly Chore';$('choreDialog').showModal()};
 
 
@@ -1659,4 +1675,15 @@ window.addEventListener('DOMContentLoaded',()=>{
   // Brief skeleton during initial cloud/local render.
   const sk=document.getElementById('appLoadingSkeleton');
   if(sk){sk.classList.remove('hidden');setTimeout(()=>sk.classList.add('hidden'),450);}
+});
+
+/* V48.1 chore cloud status feedback */
+window.addEventListener('hm-cloud-status',e=>{
+ const n=document.getElementById('choreSyncNotice');
+ if(!n||n.classList.contains('hidden'))return;
+ const text=e.detail?.text||'';
+ if(text==='Sync Error'||text==='Offline'){
+   n.textContent='Chore saved on this device — cloud sync failed';
+   n.classList.add('sync-bad');
+ }
 });

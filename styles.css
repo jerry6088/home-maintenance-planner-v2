@@ -378,3 +378,8 @@ body.sidebar-collapsed .desktop-sidebar-toggle{transform:rotate(180deg)}
 @media(max-width:760px){
  .app-update-banner{top:8px;width:calc(100% - 24px);justify-content:space-between}
 }
+
+/* V48.1 chore sync feedback */
+.chore-sync-notice{margin:0 0 10px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;font-size:12px;font-weight:800}
+.chore-sync-notice.sync-ok{opacity:.8}
+.chore-sync-notice.sync-bad{font-weight:900}

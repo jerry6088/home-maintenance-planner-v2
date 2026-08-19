@@ -41,6 +41,7 @@
     if(a){a.textContent=text;a.className=cls;}
     const b=$c('cloudSidebarStatus');
     if(b){b.textContent=text;b.dataset.state=cls;}
+    try{window.dispatchEvent(new CustomEvent('hm-cloud-status',{detail:{text,cls}}));}catch{}
   }
 
   function setLastSync(ts, label='Saved'){
@@ -110,9 +111,9 @@
   }
 
   async function pushNow(force=false){
-    if(!sb||!householdId||applyingRemote)return;
+    if(!sb||!householdId||applyingRemote)return false;
     const session=await getSession();
-    if(!session)return;
+    if(!session)return false;
 
     setStatus('Saving…','busy');
 
@@ -122,7 +123,7 @@
         if(remote?.updated_at && lastCloudTs && new Date(remote.updated_at)>new Date(lastCloudTs)){
           setStatus('Updating…','busy');
           applySnapshot(remote.state,remote.updated_at);
-          return;
+          return false;
         }
       }
 
@@ -137,9 +138,11 @@
       if(error)throw error;
       setStatus('Synced','ok');
       setLastSync(now,'Saved');
+      return true;
     }catch(err){
       console.error('V35 cloud push failed',err);
       setStatus(navigator.onLine?'Sync Error':'Offline','bad');
+      return false;
     }
   }
 
@@ -151,6 +154,20 @@
   }
 
   window.hmCloudChanged=(reason='app-change')=>schedulePush(reason);
+
+  // V48.1: explicit commit for high-value actions such as chore completion.
+  // This bypasses the debounce path so the completed chore is written immediately.
+  window.hmCloudCommit=async(reason='explicit-change')=>{
+    if(!cloudReady||applyingRemote){
+      setStatus(navigator.onLine?'Waiting for sync…':'Offline','busy');
+      return false;
+    }
+    clearTimeout(pushTimer);
+    setStatus('Saving…','busy');
+    const ok=await pushNow(true);
+    try{window.dispatchEvent(new CustomEvent('hm-cloud-commit',{detail:{ok,reason}}));}catch{}
+    return ok;
+  };
 
   function hookStorage(){
     localStorage.setItem=function(key,val){
