@@ -233,5 +233,30 @@
 </form>
 </dialog>
 
+
+<dialog id="taskDetailsDialog" class="wide-dialog">
+  <div class="detail-shell">
+    <div class="detail-head">
+      <div><small id="taskDetailType"></small><h2 id="taskDetailTitle">Task Details</h2><div id="taskDetailMeta" class="muted"></div></div>
+      <button type="button" id="closeTaskDetails">✕</button>
+    </div>
+    <div id="taskDetailBody"></div>
+    <section class="task-notes-section">
+      <h3>Task Notes</h3>
+      <textarea id="taskDetailNotes" rows="4" placeholder="Add instructions, observations, repair notes, etc."></textarea>
+      <button id="saveTaskDetailNotes" type="button">Save Notes</button>
+    </section>
+    <section class="task-photo-section">
+      <div class="photo-section-head"><h3>Photos</h3><label class="photo-upload-btn">+ Add Photo<input id="taskPhotoInput" type="file" accept="image/*" multiple hidden></label></div>
+      <div id="taskPhotoGrid" class="photo-grid"></div>
+      <p class="muted photo-help">Photos are stored on this device for now.</p>
+    </section>
+    <div class="detail-footer-actions"><button id="taskDetailCompleteBtn" type="button">✓ Complete Task</button><button id="taskDetailEditBtn" class="secondary" type="button">Edit Task</button></div>
+  </div>
+</dialog>
+<dialog id="photoViewerDialog" class="photo-viewer-dialog">
+  <button id="closePhotoViewer" type="button">✕</button><img id="photoViewerImage" alt="Task photo"><div id="photoViewerCaption"></div>
+</dialog>
+
 <script src="app.js"></script>
 </body></html>
