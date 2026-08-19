@@ -357,6 +357,16 @@
         <p class="muted">Send your family the planner link and invite code. They only need to create an account and join your household.</p>
         <button id="copyInviteBtn" type="button">Copy Invite</button>
       </div>
+
+      <div class="family-profile-box">
+        <div class="family-profile-head">
+          <div><small>LOGIN LINK</small><h4>Family Profiles</h4></div>
+          <button id="refreshProfilesBtn" type="button" class="secondary">Refresh</button>
+        </div>
+        <p class="muted">Each login is linked to one family name. Tasks assigned to that name automatically become that person's My Tasks.</p>
+        <div class="current-profile-line">Your profile: <strong id="activeProfileName">Not linked</strong></div>
+        <div id="familyProfilesList" class="family-profiles-list"></div>
+      </div>
       <div class="cloud-sync-health"><span id="realtimeStatusText">Connecting realtime…</span><span id="lastSyncText" class="cloud-last-sync">Waiting for sync…</span></div>
       <div class="actions"><button id="pullCloudBtn" type="button" class="secondary">Pull Cloud → This Device</button><button id="pushThisDeviceBtn" type="button" class="secondary">Push This Device → Cloud</button><button id="cloudSignOutBtn" type="button">Sign Out</button></div>
     </section>

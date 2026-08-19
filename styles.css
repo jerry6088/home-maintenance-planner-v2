@@ -320,3 +320,20 @@ body.sidebar-collapsed .desktop-sidebar-toggle{transform:rotate(180deg)}
 .chore-completed-visible{opacity:.68}
 .chore-completed-visible strong{text-decoration:line-through}
 .chore-completed-visible .today-kind{opacity:.8}
+
+/* V44 Family Profiles */
+.family-profile-box{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.family-profile-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.family-profile-head small{font-weight:900;letter-spacing:.1em;opacity:.7}
+.family-profile-head h4{margin:2px 0 0}
+.current-profile-line{margin:10px 0;padding:8px 10px;border-radius:10px;background:var(--royal-soft)}
+.family-profiles-list{display:grid;gap:8px}
+.family-profile-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,190px);gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.family-profile-member strong,.family-profile-member small{display:block}
+.family-profile-member small{opacity:.7;margin-top:2px}
+.family-profile-select{width:100%}
+.family-profile-linked{font-weight:800;text-align:right}
+@media(max-width:600px){
+ .family-profile-row{grid-template-columns:1fr}
+ .family-profile-linked{text-align:left}
+}

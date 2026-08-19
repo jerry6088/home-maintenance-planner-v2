@@ -952,6 +952,7 @@ function historyRows(assetName,limit){
 
 
 const PEOPLE=['Jerry','Ashley','Jack','Jace','Wesley','Waylon','Roger'];
+window.HM_PEOPLE=PEOPLE;
 const ASSIGNEE_MIG='hmv2-assignees-v1';
 if(localStorage.getItem(ASSIGNEE_MIG)!=='1'){
   tasks.forEach(t=>{if(typeof t.assignee!=='string')t.assignee='';});
@@ -1214,9 +1215,14 @@ function todayRowHTML(kind,name,meta,id,type){
  return `<article class="today-row clickable-task" onclick="openTaskDetails('${type}','${id}')"><div><strong>${esc(name)}</strong><div class="muted">${esc(meta||'')}</div></div><span class="today-kind">${esc(kind)}</span></article>`;
 }
 function currentSignedDisplayName(){
- const el=$('activeDisplayName');
- const fromUi=el&&el.textContent?el.textContent.trim():'';
- if(fromUi)return fromUi;
+ const linked=(localStorage.getItem('hmv2-active-profile')||'').trim();
+ if(linked)return linked;
+ const el=$('activeProfileName');
+ const fromProfile=el&&el.textContent&&el.textContent!=='Not linked'?el.textContent.trim():'';
+ if(fromProfile)return fromProfile;
+ const oldEl=$('activeDisplayName');
+ const legacy=oldEl&&oldEl.textContent?oldEl.textContent.trim():'';
+ if(legacy)return legacy;
  return localStorage.getItem('hmv2-cloud-display-name')||'';
 }
 function renderToday(){
@@ -1311,7 +1317,8 @@ function render(){
    $('assigneeFilter').innerHTML='<option value="">Everyone</option>'+PEOPLE.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
    $('assigneeFilter').value=prevAssignee;
  }
- $('peopleMiniList').innerHTML=PEOPLE.map(p=>`<button type="button" class="${prevAssignee===p?'active':''}" onclick="openPersonTasks('${esc(p)}')">${esc(p)}</button>`).join('');
+ const linkedProfile=currentSignedDisplayName();
+ $('peopleMiniList').innerHTML=PEOPLE.map(p=>`<button type="button" class="${prevAssignee===p||(!prevAssignee&&linkedProfile===p)?'active':''}" onclick="openPersonTasks('${esc(p)}')">${esc(p)}${linkedProfile===p?' · Me':''}</button>`).join('');
  $('equipmentTotal').textContent=assets.length;
  renderSeasonalPanelState();
  if(seasonalPanelOpen){renderSeasonal();}

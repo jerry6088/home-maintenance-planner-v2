@@ -7,6 +7,7 @@
   const HOUSEHOLD_KEY='hmv2-cloud-household';
   const DEVICE_KEY='hmv2-device-id-v35';
   const LAST_TS_KEY='hmv2-cloud-last-ts-v35';
+  const ACTIVE_PROFILE_KEY='hmv2-active-profile';
 
   let sb=null;
   let householdId='';
@@ -92,7 +93,7 @@
 
   async function listMemberships(){
     const {data,error}=await sb.from('household_members')
-      .select('household_id,display_name,role,created_at,households(name,invite_code)')
+      .select('household_id,user_id,display_name,profile_name,role,created_at,households(name,invite_code)')
       .order('created_at',{ascending:true});
     if(error)throw error;
     return data||[];
@@ -245,6 +246,70 @@
     setStatus('Synced','ok');
   }
 
+
+  function profileOptions(selected=''){
+    const people=Array.isArray(window.HM_PEOPLE)?window.HM_PEOPLE:[];
+    return ['<option value="">Not linked</option>',...people.map(p=>`<option value="${p.replace(/"/g,'&quot;')}" ${p===selected?'selected':''}>${p}</option>`)].join('');
+  }
+
+  async function saveMemberProfile(memberUserId,profileName){
+    if(!sb||!householdId)return;
+    const {error}=await sb.rpc('set_household_member_profile',{
+      p_household_id:householdId,
+      p_user_id:memberUserId,
+      p_profile_name:profileName
+    });
+    if(error){
+      alert(error.message||String(error));
+      return false;
+    }
+    await renderFamilyProfiles();
+    await refreshCloudUI();
+    try{window.renderToday?.();window.render?.();}catch{}
+    return true;
+  }
+
+  async function renderFamilyProfiles(){
+    const list=$c('familyProfilesList');
+    if(!list||!sb||!householdId)return;
+
+    const session=await getSession();
+    if(!session)return;
+
+    let members=[];
+    try{members=await listMemberships()}catch(err){
+      list.innerHTML='<p class="muted">Run the V44 Family Profiles migration in Supabase first.</p>';
+      return;
+    }
+
+    const me=members.find(m=>m.user_id===session.user.id);
+    const owner=me?.role==='owner';
+
+    list.innerHTML=members.map(m=>{
+      const selected=m.profile_name||m.display_name||'';
+      const isMe=m.user_id===session.user.id;
+      const canEdit=owner||isMe;
+      const label=isMe?'You':(m.display_name||'Family member');
+      return `<div class="family-profile-row">
+        <div class="family-profile-member">
+          <strong>${label}</strong>
+          <small>${m.role==='owner'?'Owner':'Member'}${isMe?' · signed in':''}</small>
+        </div>
+        ${canEdit
+          ? `<select class="family-profile-select" data-profile-user="${m.user_id}">${profileOptions(selected)}</select>`
+          : `<span class="family-profile-linked">${selected||'Not linked'}</span>`}
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.family-profile-select').forEach(sel=>{
+      sel.addEventListener('change',async()=>{
+        sel.disabled=true;
+        await saveMemberProfile(sel.dataset.profileUser,sel.value);
+        sel.disabled=false;
+      });
+    });
+  }
+
   async function refreshCloudUI(){
     if(!sb){setStatus('Not configured','off');return;}
 
@@ -278,11 +343,17 @@
     if(!householdId)await connectHousehold(chosen.household_id);
 
     const h=chosen.households||{};
+    const linkedProfile=(chosen.profile_name||chosen.display_name||'').trim();
+    if(linkedProfile)originalSetItem(ACTIVE_PROFILE_KEY,linkedProfile);
+    else localStorage.removeItem(ACTIVE_PROFILE_KEY);
+
     if($c('activeHouseholdName'))$c('activeHouseholdName').textContent=h.name||'Household';
     if($c('activeInviteCode'))$c('activeInviteCode').textContent=h.invite_code||'';
     if($c('activeUserEmail'))$c('activeUserEmail').textContent=session.user.email||'';
     if($c('activeDisplayName'))$c('activeDisplayName').textContent=chosen.display_name||'';
+    if($c('activeProfileName'))$c('activeProfileName').textContent=linkedProfile||'Not linked';
 
+    await renderFamilyProfiles();
     setStatus('Synced','ok');
   }
 
@@ -330,6 +401,7 @@
       if(channel){sb.removeChannel(channel);channel=null;}
       householdId='';cloudReady=false;
       originalSetItem(HOUSEHOLD_KEY,'');
+      localStorage.removeItem(ACTIVE_PROFILE_KEY);
       await sb.auth.signOut();
       await refreshCloudUI();
     });
@@ -341,6 +413,9 @@
       if(error)return alert(error.message);
       const id=(data?.[0]||{}).household_id;
       await connectHousehold(id);
+      if(display){
+        await sb.rpc('set_household_member_profile',{p_household_id:id,p_user_id:(await getSession()).user.id,p_profile_name:display});
+      }
       await pushNow(true);
       await refreshCloudUI();
     });
@@ -351,6 +426,9 @@
       const {data,error}=await sb.rpc('join_household',{p_invite_code:code,p_display_name:display});
       if(error)return alert(error.message);
       await connectHousehold(data);
+      if(display){
+        await sb.rpc('set_household_member_profile',{p_household_id:data,p_user_id:(await getSession()).user.id,p_profile_name:display});
+      }
       await pullCloud();
     });
 
@@ -361,6 +439,8 @@
     $c('pullCloudBtn')?.addEventListener('click',async()=>{
       if(confirm('Replace this device with the current cloud data?'))await pullCloud();
     });
+
+    $c('refreshProfilesBtn')?.addEventListener('click',async()=>{await renderFamilyProfiles();await refreshCloudUI();});
 
     $c('copyInviteBtn')?.addEventListener('click',async()=>{
       const code=$c('activeInviteCode')?.textContent?.trim()||'';
