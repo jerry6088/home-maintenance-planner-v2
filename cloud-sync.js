@@ -263,6 +263,14 @@
       alert(error.message||String(error));
       return false;
     }
+
+    const session=await getSession();
+    if(session?.user?.id===memberUserId){
+      if(profileName)originalSetItem(ACTIVE_PROFILE_KEY,profileName);
+      else localStorage.removeItem(ACTIVE_PROFILE_KEY);
+      if($c('activeProfileName'))$c('activeProfileName').textContent=profileName||'Not linked';
+    }
+
     await renderFamilyProfiles();
     await refreshCloudUI();
     try{window.renderToday?.();window.render?.();}catch{}
@@ -384,7 +392,15 @@
     active?.classList.remove('hidden');
 
     const saved=localStorage.getItem(HOUSEHOLD_KEY);
-    const chosen=memberships.find(x=>x.household_id===saved)||memberships[0];
+
+    // IMPORTANT: choose the membership row for the currently signed-in user.
+    // Previously V46 could choose the first household member (often the owner),
+    // which made Ashley's login incorrectly show Jerry as "Your profile".
+    const householdMatches=memberships.filter(x=>!saved||x.household_id===saved);
+    const chosen=householdMatches.find(x=>x.user_id===session.user.id)
+      || memberships.find(x=>x.user_id===session.user.id)
+      || householdMatches[0]
+      || memberships[0];
 
     if(!householdId)await connectHousehold(chosen.household_id);
 
@@ -527,7 +543,11 @@
       const memberships=await listMemberships();
       if(memberships.length){
         const saved=localStorage.getItem(HOUSEHOLD_KEY);
-        const chosen=memberships.find(x=>x.household_id===saved)||memberships[0];
+        const householdMatches=memberships.filter(x=>!saved||x.household_id===saved);
+        const chosen=householdMatches.find(x=>x.user_id===session.user.id)
+          || memberships.find(x=>x.user_id===session.user.id)
+          || householdMatches[0]
+          || memberships[0];
         await connectHousehold(chosen.household_id);
       }
     }

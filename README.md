@@ -1,25 +1,17 @@
-# V46 Owner Account Setup
+# V46.1 Family Profile Fix
 
-Built from V45/V44.
+Fixes the profile identity bug seen on Ashley's login.
 
-New workflow:
-- household owner creates family accounts directly
-- choose family profile + email + temporary password
-- optional secure temporary-password generator
-- no invitation email
-- no confirmation email
-- no SMTP required
-- account is email-confirmed by the server and usable immediately
-- account is automatically linked to Miller Home and the selected Family Profile
-- only the database-confirmed household owner can use the privileged account-creation endpoint
-- service-role key remains server-side in Supabase
+Problem:
+V46 sometimes selected the first Miller Home household member when setting "Your profile".
+Because Jerry is the owner and usually appears first, Ashley could be signed in with her own email while the app still said "Your profile: Jerry".
 
-Required:
-1. V44 Family Profiles migration already applied.
-2. Deploy Edge Function `create-family-account` using included index.ts.
-3. In that function's Settings, keep "Verify JWT with legacy secret" OFF.
-4. Custom SMTP may be turned OFF.
-5. Upload V46 web files to GitHub, leaving cloud-config.js untouched.
-6. Open with ?v=46.
+Fix:
+- current profile is selected by the authenticated Supabase user_id
+- startup household selection uses the signed-in user's membership
+- changing your own Family Profile updates the local profile immediately
+- no schema, Edge Function, or cloud-config changes required
 
-See V46-SETUP.md.
+Upload/replace the normal web files.
+Do NOT replace cloud-config.js.
+Open with ?v=461.
