@@ -647,7 +647,7 @@ function esc(x=''){return String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;
 function addMonths(dateStr,n){const d=new Date((dateStr||todayISO())+'T12:00:00');d.setMonth(d.getMonth()+(+n||0));return d.toISOString().slice(0,10)}
 function isHomeAsset(name){return assetByName(name)?.type==='home'}
 function meterLabel(a){if(!a||a.type==='home'||a.meterType==='none')return'';return a.meter!==''?`${a.meter} ${a.meterType}`:'Meter not entered'}
-function renderAssets(type,id){$(id).innerHTML=assets.filter(a=>a.type===type).map(a=>`<article class="card"><h3>${esc(a.name)}</h3><div class="muted">${esc([a.year,a.make,a.model].filter(Boolean).join(' '))}</div>${type!=='home'?`<div class="meter">${esc(meterLabel(a))}</div>`:''}${a.serial?`<div class="muted">VIN / Serial: ${esc(a.serial)}</div>`:''}<p>${esc(a.notes||'')}</p><div class="card-actions"><button onclick="openEquipmentDetail('${a.id}','parts')">Parts List</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','manuals')">Manuals</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','specs')">Specs</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','history')">History</button><button class="secondary" onclick="editAsset('${a.id}')">Edit</button></div></article>`).join('')}
+function renderAssets(type,id){$(id).innerHTML=assets.filter(a=>a.type===type).map(a=>`<article class="card"><h3>${esc(a.name)}</h3><div class="muted">${esc([a.year,a.make,a.model].filter(Boolean).join(' '))}</div>${type!=='home'?`<div class="meter">${esc(meterLabel(a))}</div>`:''}${a.serial?`<div class="muted">VIN / Serial: ${esc(a.serial)}</div>`:''}<p>${esc(a.notes||'')}</p><div class="card-actions"><button onclick="openEquipmentDetail('${a.id}','recommended')">Recommended</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','parts')">Parts List</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','manuals')">Manuals</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','specs')">Specs</button><button class="secondary" onclick="openEquipmentDetail('${a.id}','history')">History</button><button class="secondary" onclick="editAsset('${a.id}')">Edit</button></div></article>`).join('')}
 function partsHTML(t){if(!t.parts?.length)return'';return `<div class="parts"><strong>Parts & Supplies</strong>${t.parts.map(p=>`<div class="part-view"><b>${esc(p.description)}</b>${p.oem?` · OEM: ${esc(p.oem)}`:''}${p.aftermarket?` · Cross-ref: ${esc(p.aftermarket)}`:''}${p.qty?` · Qty/Capacity: ${esc(p.qty)}`:''}${p.notes?`<br>${esc(p.notes)}`:''}</div>`).join('')}</div>`}
 function historyHTML(t){const h=history.filter(x=>x.taskId===t.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));if(!h.length)return'';return `<details class="history"><summary>Service history (${h.length})</summary>${h.map(x=>`<div>${esc(x.date)}${x.meter!==''&&x.meter!=null?` · ${esc(x.meter)} ${esc(x.meterType||'')}`:''}${x.cost?` · $${Number(x.cost).toFixed(2)}`:''}${x.notes?`<br>${esc(x.notes)}`:''}</div>`).join('<hr>')}</details>`}
 function dueClass(t){if(!t.dueDate)return'';const days=(new Date(t.dueDate+'T12:00:00')-new Date())/86400000;if(days<0)return'overdue';if(days<=30)return'soon';return''}
@@ -850,10 +850,21 @@ function collectedParts(assetName){
 }
 function renderDetailTab(tab){
  document.querySelectorAll('[data-detail-tab]').forEach(b=>b.classList.toggle('active',b.dataset.detailTab===tab));
- ['detailParts','detailManuals','detailSpecs','detailHistory'].forEach(id=>$(id).classList.add('hidden'));
+ ['detailRecommended','detailParts','detailManuals','detailSpecs','detailHistory'].forEach(id=>$(id).classList.add('hidden'));
  const a=assets.find(x=>x.id===$('equipmentDetailDialog').dataset.assetId);if(!a)return;
  const lib=equipmentLibrary[a.name]||{manuals:[],specs:[]};
- if(tab==='parts'){
+
+ if(tab==='recommended'){
+  $('detailRecommended').classList.remove('hidden');
+  const rec=tasks.filter(t=>t.asset===a.name&&!t.completed).slice().sort(taskSort);
+  $('detailRecommended').innerHTML=rec.length?`<div class="recommended-list">${rec.map(t=>{
+    const u=taskUrgency(t),cls=u===0?'overdue':u===1?'soon':'current';
+    const status=u===0?'Overdue':u===1?'Due Soon':t.dueDate?'Scheduled':'Recommended';
+    const interval=[t.months&&t.months+' mo',t.miles&&t.miles+' mi',t.hours&&t.hours+' hr'].filter(Boolean).join(' / ');
+    const source=/factory|manufacturer|oem|polaris|ford|honda|mahindra|scag|goodman|ge |maytag|volkswagen|vw /i.test(t.notes||'')?'Manufacturer / OEM':'Recommended';
+    return `<article class="recommended-item ${cls}"><div class="recommended-head"><div><div class="recommended-title">${esc(t.name)}</div><div class="recommended-meta">${esc(status)}${t.dueDate?` · Due ${esc(t.dueDate)}`:''}${interval?` · ${esc(interval)}`:''}</div><span class="recommended-source">${esc(source)}</span></div></div>${t.notes?`<p>${esc(t.notes)}</p>`:''}${partsHTML(t)}<div class="recommended-actions"><button onclick="event.stopPropagation();completeTask('${t.id}')">✓ Complete</button><button class="secondary" onclick="event.stopPropagation();editTask('${t.id}')">Edit</button></div></article>`;
+   }).join('')}</div>`:'<p class="muted">No recommended maintenance tasks have been added for this equipment yet.</p>';
+ }else if(tab==='parts'){
   $('detailParts').classList.remove('hidden');const ps=collectedParts(a.name);
   $('detailParts').innerHTML=ps.length?`<table class="parts-table"><thead><tr><th>Part / Supply</th><th>OEM #</th><th>Qty / Capacity</th><th>Cross-ref</th><th>Service</th></tr></thead><tbody>${ps.map(p=>`<tr><td><b>${esc(p.description)}</b>${p.notes?`<div class="muted">${esc(p.notes)}</div>`:''}</td><td>${esc(p.oem||'—')}</td><td>${esc(p.qty||'—')}</td><td>${esc(p.aftermarket||'—')}</td><td>${esc(p.service||'')}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">No verified parts have been added for this equipment yet.</p>';
  }else if(tab==='manuals'){
@@ -869,7 +880,7 @@ function renderDetailTab(tab){
   $('detailSpecs').innerHTML=`<div class="spec-grid">${specs.map(s=>`<div class="spec-card"><b>${esc(s[0])}</b><span>${esc(s[1])}</span></div>`).join('')}</div>${a.notes?`<div class="spec-card"><h4>Notes</h4>${esc(a.notes)}</div>`:''}${lib.repair&&lib.repair.length?`<div class="spec-card"><h4>Common Repair Parts</h4>${lib.repair.map(r=>`<div class="part-view"><b>${esc(r[0])}</b> · ${esc(r[1])}</div>`).join('')}</div>`:''}`;
  }
 }
-window.openEquipmentDetail=(id,tab='parts')=>{
+window.openEquipmentDetail=(id,tab='recommended')=>{
  const a=assets.find(x=>x.id===id);if(!a)return;
  const d=$('equipmentDetailDialog');d.dataset.assetId=id;
  $('detailType').textContent=a.type==='vehicle'?'VEHICLE':a.type==='power'?'POWER EQUIPMENT':'HOME EQUIPMENT';
