@@ -49,7 +49,7 @@
     const el=$c('lastSyncText');
     if(el){
       const d=new Date(ts);
-      el.textContent=`Last synced: ${d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'})}`;
+      el.textContent=`${label} ✓ · ${d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'})}`;
     }
   }
 
@@ -165,7 +165,6 @@
       if(!row?.updated_at||!row?.state)return;
 
       if(lastCloudTs && new Date(row.updated_at)<=new Date(lastCloudTs)){
-        setLastSync(row.updated_at,'Synced');
         if(navigator.onLine)setStatus('Synced','ok');
         return;
       }
@@ -238,7 +237,7 @@
     if(!row?.state || Object.keys(row.state).length===0){
       await pushNow(true);
     }else{
-      if(row.updated_at)setLastSync(row.updated_at,'Connected');
+      if(!lastCloudTs)setLastSync(row.updated_at,'Connected');
     }
 
     subscribeRealtime();

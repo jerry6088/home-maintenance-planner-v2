@@ -246,26 +246,22 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 .cloud-sync-health{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
 .cloud-sync-health>span:first-child{font-size:12px;font-weight:800;color:#2146d0;background:#eef3ff;border-radius:999px;padding:6px 9px}
 
-/* V37 Today */
-.today-page{padding:0 0 32px}
-.today-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:12px;margin:18px 0}
-.today-stat{background:#fff;border:1px solid #dfe6f5;border-radius:14px;padding:16px;box-shadow:0 4px 14px rgba(30,60,120,.06)}
+/* V39 Today + chore integration */
+.today-hero{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}
+.today-hero small{font-weight:900;letter-spacing:.12em;color:#64748b}
+.today-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.today-stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
 .today-stat span{display:block;font-size:30px;font-weight:900;color:#2146d0}
-.today-stat small{font-weight:800;color:#64748b}
+.today-stat small{color:#64748b;font-weight:800}
 .today-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.today-card{background:#fff;border:1px solid #dfe6f5;border-radius:16px;padding:16px;box-shadow:0 4px 14px rgba(30,60,120,.06)}
-.today-card h2{margin:0 0 12px;font-size:18px}
-.today-list{display:flex;flex-direction:column;gap:8px}
-.today-row{border:1px solid #e5eaf4;border-radius:10px;padding:10px 12px;background:#fbfdff}
-.today-row b{display:block}
-.today-row small{display:block;color:#64748b;margin-top:3px}
-.today-empty{padding:16px;border:1px dashed #cbd5e1;border-radius:10px;color:#64748b;text-align:center}
+.today-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
+.today-card h3{margin:0 0 12px}
+.today-list{display:grid;gap:8px}
+.today-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfdff}
+.today-kind{font-size:11px;font-weight:900;color:#2146d0;background:#eef3ff;border-radius:999px;padding:5px 7px;white-space:nowrap}
+.today-chores-panel .today-list{margin-top:6px}
 @media(max-width:760px){
  .today-summary-grid{grid-template-columns:repeat(2,1fr)}
  .today-grid{grid-template-columns:1fr}
- .today-stat span{font-size:26px}
+ .today-row{align-items:flex-start}
 }
-
-/* V38 Today visibility */
-#page-today.hidden{display:none!important}
-#page-today:not(.hidden){display:block!important}

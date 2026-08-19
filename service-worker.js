@@ -1,6 +1,6 @@
 
-const CACHE='home-maintenance-v38-1';
-const SHELL=['./','./index.html','./styles.css','./app.js','./cloud-sync.js','./today.js','./cloud-config.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE='home-maintenance-v39';
+const SHELL=['./','./index.html','./styles.css','./app.js','./cloud-sync.js','./cloud-config.js','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)));

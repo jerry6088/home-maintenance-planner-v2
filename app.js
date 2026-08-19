@@ -1078,8 +1078,8 @@ function currentWeekRange(){
  return {start:isoLocal(mon),end:isoLocal(sun)};
 }
 function choreEffectiveDueDate(c){
- if(c.assignmentWeek!==mondayOfWeek())return '';
- if(c.weekDueDate)return c.weekDueDate;
+ if(!choreAssignedThisWeek(c))return '';
+ if(c.assignmentWeek===mondayOfWeek()&&c.weekDueDate)return c.weekDueDate;
  if(c.scheduleType==='week')return currentWeekRange().end;
  return choreDateForWeek(c);
 }
@@ -1099,8 +1099,8 @@ function renderChores(){
  list.sort((a,b)=>['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(a.day)-['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(b.day));
  $('choreList').innerHTML=list.length?list.map(c=>`<article class="chore-card ${choreDoneThisWeek(c)?'done':''} clickable-task" onclick="openTaskDetails('chore','${c.id}')"><div><div class="chore-title">${esc(c.name)}</div><div class="chore-meta">${c.scheduleType==='week'?'Entire week':esc(c.day)}${c.weekDueDate?` · Due ${esc(c.weekDueDate)}`:''} · ${(effectiveChoreAssignee(c)||c.assignee)?`Assigned to ${esc(effectiveChoreAssignee(c)||c.assignee)}`:'Unassigned'}</div>${c.notes?`<p>${esc(c.notes)}</p>`:''}${choreDoneThisWeek(c)?'<span class="completed-badge">✓ Completed this week</span>':''}</div><div class="chore-actions">${choreDoneThisWeek(c)?`<button class="undo-chore" onclick="event.stopPropagation();undoChore('${c.id}')">↶ Undo</button>`:`<button onclick="event.stopPropagation();completeChore('${c.id}')">✓ Complete</button>`}<button class="edit-chore" onclick="event.stopPropagation();editChore('${c.id}')">Edit</button></div></article>`).join(''):'<div class="dashboard-panel"><p class="muted">No chores to show for this view.</p></div>';
 }
-window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek=mondayOfWeek();c.completedDate=todayISO();saveChores();renderChores();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
-window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek='';c.completedDate='';saveChores();renderChores();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
+window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek=mondayOfWeek();c.completedDate=todayISO();saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
+window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;c.completedWeek='';c.completedDate='';saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar()};
 window.editChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;$('choreId').value=c.id;$('choreName').value=c.name;populateAssigneeSelect('choreAssignee',c.assignee||'');$('choreScheduleType').value=c.scheduleType||'day';$('choreDay').value=c.day||'Monday';$('choreDayWrap').classList.toggle('hidden',(c.scheduleType||'day')==='week');$('choreNotes').value=c.notes||'';$('choreDialogTitle').textContent='Edit Weekly Chore';$('choreDialog').showModal()};
 
 
@@ -1110,11 +1110,12 @@ function calendarTaskStatus(t){
  return u===0?'overdue':u===1?'due-soon':'upcoming';
 }
 function choreAssignedThisWeek(c){
- return c.assignmentWeek===mondayOfWeek() && Boolean(c.weekAssignee);
+ if(c.assignmentWeek===mondayOfWeek())return Boolean(c.weekAssignee||c.assignee);
+ return Boolean(c.assignee);
 }
 function effectiveChoreAssignee(c){
- if(c.assignmentWeek===mondayOfWeek())return c.weekAssignee||'';
- return '';
+ if(c.assignmentWeek===mondayOfWeek())return c.weekAssignee||c.assignee||'';
+ return c.assignee||'';
 }
 
 let calendarCursor=new Date();
@@ -1126,10 +1127,11 @@ function isoLocal(d){
  return `${y}-${m}-${day}`;
 }
 function choreDateForWeek(c){
- if(c.assignmentWeek!==mondayOfWeek())return '';
+ if(!choreAssignedThisWeek(c))return '';
  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
  const di=days.indexOf(c.day); if(di<0)return '';
- const d=new Date(c.assignmentWeek+'T12:00:00');d.setDate(d.getDate()+di);return isoLocal(d);
+ const wk=mondayOfWeek();
+ const d=new Date(wk+'T12:00:00');d.setDate(d.getDate()+di);return isoLocal(d);
 }
 function calendarItemsForDate(dateStr){
  const items=[];
@@ -1192,6 +1194,47 @@ function calendarItemsForDate(dateStr){
 
  return items;
 }
+
+function todayChores(){
+ const ds=isoLocal(new Date());
+ return chores.filter(c=>choreAssignedThisWeek(c)&&!choreDoneThisWeek(c)&&(
+   c.scheduleType==='week' || choreEffectiveDueDate(c)===ds
+ ));
+}
+function todayRowHTML(kind,name,meta,id,type){
+ return `<article class="today-row clickable-task" onclick="openTaskDetails('${type}','${id}')"><div><strong>${esc(name)}</strong><div class="muted">${esc(meta||'')}</div></div><span class="today-kind">${esc(kind)}</span></article>`;
+}
+function currentSignedDisplayName(){
+ const el=$('activeDisplayName');
+ const fromUi=el&&el.textContent?el.textContent.trim():'';
+ if(fromUi)return fromUi;
+ return localStorage.getItem('hmv2-cloud-display-name')||'';
+}
+function renderToday(){
+ const ds=isoLocal(new Date());
+ const dueToday=tasks.filter(t=>!t.completed&&t.dueDate===ds);
+ const overdue=tasks.filter(t=>!t.completed&&calendarTaskStatus(t)==='overdue');
+ const ch=todayChores();
+ const me=currentSignedDisplayName();
+ const mineMaint=me?tasks.filter(t=>!t.completed&&t.assignee===me&&(t.dueDate===ds||calendarTaskStatus(t)==='overdue'||calendarTaskStatus(t)==='due-soon')):[];
+ const mineChores=me?ch.filter(c=>effectiveChoreAssignee(c)===me):[];
+
+ $('todayDateLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+ $('todayDueCount').textContent=dueToday.length;
+ $('todayOverdueCount').textContent=overdue.length;
+ $('todayChoreCount').textContent=ch.length;
+ $('todayMineCount').textContent=mineMaint.length+mineChores.length;
+
+ $('todayDueList').innerHTML=dueToday.length?dueToday.map(t=>todayRowHTML('Maintenance',t.name,`${t.asset}${t.assignee?' · '+t.assignee:''}` ,t.id,'maintenance')).join(''):'<p class="muted">Nothing due today.</p>';
+ $('todayOverdueList').innerHTML=overdue.length?overdue.map(t=>todayRowHTML('Overdue',t.name,`${t.asset}${t.assignee?' · '+t.assignee:''}`,t.id,'maintenance')).join(''):'<p class="muted">No overdue maintenance.</p>';
+ $('todayChoreList').innerHTML=ch.length?ch.map(c=>todayRowHTML('Chore',c.name,`${effectiveChoreAssignee(c)||'Unassigned'} · ${c.scheduleType==='week'?'Entire week':c.day}`,c.id,'chore')).join(''):'<p class="muted">No chores scheduled today.</p>';
+ const mine=[...mineMaint.map(t=>({kind:'Maintenance',name:t.name,meta:t.asset,id:t.id,type:'maintenance'})),...mineChores.map(c=>({kind:'Chore',name:c.name,meta:c.scheduleType==='week'?'Entire week':c.day,id:c.id,type:'chore'}))];
+ $('todayMineList').innerHTML=mine.length?mine.map(x=>todayRowHTML(x.kind,x.name,x.meta,x.id,x.type)).join(''):'<p class="muted">Nothing assigned to you today.</p>';
+
+ const db=$('dashboardTodayChores');
+ if(db)db.innerHTML=ch.length?ch.slice(0,8).map(c=>todayRowHTML('Chore',c.name,`${effectiveChoreAssignee(c)||'Unassigned'} · ${c.scheduleType==='week'?'Entire week':c.day}`,c.id,'chore')).join(''):'<p class="muted">No chores scheduled today.</p>';
+}
+
 function renderCalendar(){
  if(!selectedCalendarDate)selectedCalendarDate=isoLocal(new Date());
  const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth();
@@ -1294,6 +1337,7 @@ function render(){
  $('overdue').textContent=baseFiltered.filter(t=>taskUrgency(t)===0).length;
  $('soon').textContent=baseFiltered.filter(t=>taskUrgency(t)===1).length;
  $('upcoming').textContent=baseFiltered.filter(t=>taskUrgency(t)>=2).length;
+ renderToday();
 
  document.querySelectorAll('[data-status-filter]').forEach(b=>b.classList.toggle('active',b.dataset.statusFilter===currentStatusFilter));
  const af=$('activeStatusFilter');
@@ -1310,6 +1354,7 @@ function updateMeterVisibility(type){$('meterFields').classList.toggle('hidden',
 
 const pageMeta={
  maintenance:['HOME & PROPERTY','Dashboard','Everything that needs attention, grouped and prioritized.'],
+ today:['HOUSEHOLD','Today','Maintenance, chores and assignments that need attention today.'],
  calendar:['SCHEDULE','Calendar','Maintenance and weekly chores organized by date.'],
  vehicles:['FLEET','Vehicles','Mileage-based maintenance, OEM parts, manuals and service history.'],
  power:['EQUIPMENT','Power Equipment','Hours-based maintenance for mowers, UTVs, tractors and outdoor equipment.'],
@@ -1375,6 +1420,7 @@ function showMainView(view){
  $(view).classList.remove('hidden');
  setPageMeta(view);
  if(view==='chores')renderChores();
+ if(view==='today')renderToday();
  if(view==='calendar')renderCalendar();
  if(view==='person'&&currentPerson)renderPersonDashboard(currentPerson);
  closeSidebar();
@@ -1440,12 +1486,14 @@ setPageMeta('maintenance');
 $('addChoreBtn').onclick=()=>{$('choreForm').reset();$('choreId').value='';populateAssigneeSelect('choreAssignee','');$('choreScheduleType').value='day';$('choreDayWrap').classList.remove('hidden');$('choreDialogTitle').textContent='Add Weekly Chore';$('choreDialog').showModal()};
 $('cancelChore').onclick=()=>$('choreDialog').close();
 $('choreScheduleType').onchange=()=>$('choreDayWrap').classList.toggle('hidden',$('choreScheduleType').value==='week');
-$('choreForm').onsubmit=e=>{e.preventDefault();const id=$('choreId').value;const data={id:id||uid(),name:$('choreName').value.trim(),assignee:$('choreAssignee').value||'',day:$('choreDay').value,scheduleType:$('choreScheduleType').value,notes:$('choreNotes').value.trim(),completedWeek:'',completedDate:'',assignmentWeek:'',weekAssignee:'',weekDueDate:''};if(id){const old=chores.find(c=>c.id===id);if(old){data.completedWeek=old.completedWeek||'';data.completedDate=old.completedDate||'';data.assignmentWeek=old.assignmentWeek||'';data.weekAssignee=old.weekAssignee||'';data.weekDueDate=old.weekDueDate||'';Object.assign(old,data)}}else chores.push(data);saveChores();$('choreDialog').close();renderChores()};
+$('choreForm').onsubmit=e=>{e.preventDefault();const id=$('choreId').value;const data={id:id||uid(),name:$('choreName').value.trim(),assignee:$('choreAssignee').value||'',day:$('choreDay').value,scheduleType:$('choreScheduleType').value,notes:$('choreNotes').value.trim(),completedWeek:'',completedDate:'',assignmentWeek:'',weekAssignee:'',weekDueDate:''};if(id){const old=chores.find(c=>c.id===id);if(old){data.completedWeek=old.completedWeek||'';data.completedDate=old.completedDate||'';data.assignmentWeek=old.assignmentWeek||'';data.weekAssignee=old.weekAssignee||'';data.weekDueDate=old.weekDueDate||'';Object.assign(old,data)}}else chores.push(data);saveChores();$('choreDialog').close();renderChores();render();renderCalendar();renderToday()};
 document.querySelectorAll('[data-chore-filter]').forEach(b=>b.onclick=()=>{choreFilter=b.dataset.choreFilter;renderChores()});
 $('chorePersonFilter').onchange=renderChores;
 
 
 $('backDashboardBtn').onclick=()=>{currentPerson='';showMainView('maintenance')};
+if($('openTodayFromDashboard'))$('openTodayFromDashboard').onclick=()=>showMainView('today');
+if($('todayRefreshBtn'))$('todayRefreshBtn').onclick=()=>renderToday();
 
 
 $('prevMonthBtn').onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendar();};
@@ -1508,56 +1556,4 @@ window.addEventListener('DOMContentLoaded',()=>{
       form.addEventListener('submit',()=>setTimeout(()=>window.hmCloudChanged?.(id),100));
     }
   });
-});
-
-
-/* V38 Today/Dashboard/Calendar integration */
-window.addEventListener('DOMContentLoaded',()=>{
-  const safeCall=name=>{try{ if(typeof window[name]==='function') window[name](); }catch(e){ console.warn(name,e); }};
-
-  // Re-render all task-dependent views after chores/tasks change.
-  const refreshAll=()=>{
-    safeCall('render');
-    safeCall('renderChores');
-    safeCall('renderCalendar');
-    try{ window.renderToday?.(); }catch{}
-  };
-
-  // Wrap persistence functions so daily chore changes flow everywhere.
-  ['saveChores'].forEach(name=>{
-    const fn=window[name];
-    if(typeof fn==='function' && !fn.__v38Wrapped){
-      const w=function(...args){
-        const out=fn.apply(this,args);
-        setTimeout(refreshAll,0);
-        return out;
-      };
-      w.__v38Wrapped=true;
-      window[name]=w;
-    }
-  });
-
-  // Chore form submission can mutate before/after saveChores depending on build.
-  const choreForm=document.getElementById('choreForm');
-  choreForm?.addEventListener('submit',()=>setTimeout(refreshAll,100));
-
-  // Completion / undo controls also need immediate refresh.
-  document.addEventListener('click',e=>{
-    const b=e.target.closest('button');
-    if(!b)return;
-    const txt=(b.textContent||'').toLowerCase();
-    if(txt.includes('complete')||txt.includes('undo')||txt.includes('save')){
-      setTimeout(refreshAll,150);
-    }
-  },true);
-
-  // Give today.js access to the app's current data/functions where possible.
-  window.HM_APP_BRIDGE={
-    getTasks:()=>{ try{return typeof tasks!=='undefined'?tasks:JSON.parse(localStorage.getItem('hmv2-tasks')||'[]')}catch{return[]} },
-    getChores:()=>{ try{return typeof chores!=='undefined'?chores:JSON.parse(localStorage.getItem('hmv2-weekly-chores')||'[]')}catch{return[]} },
-    mondayOfWeek:()=>{ try{return typeof mondayOfWeek==='function'?mondayOfWeek():''}catch{return''} },
-    choreDateForWeek:c=>{ try{return typeof choreDateForWeek==='function'?choreDateForWeek(c):''}catch{return''} },
-    choreDoneThisWeek:c=>{ try{return typeof choreDoneThisWeek==='function'?choreDoneThisWeek(c):false}catch{return false} },
-    effectiveChoreAssignee:c=>{ try{return typeof effectiveChoreAssignee==='function'?effectiveChoreAssignee(c):(c.weekAssignee||c.assignee||'')}catch{return c.assignee||''} }
-  };
 });
