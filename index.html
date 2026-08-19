@@ -5,6 +5,13 @@
 <meta name="theme-color" content="#183b2a">
 <title>Home Maintenance Planner V2</title>
 <link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2146d0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Home Planner">
+<link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 <div class="app-shell">
@@ -30,6 +37,8 @@
     <div class="sidebar-label">PEOPLE</div><div id="peopleMiniList" class="people-mini-list"></div>
 <div class="sidebar-label">CLOUD</div>
 <button id="cloudOpenBtn" class="quick-action secondary-quick" type="button">☁ Cloud Sync <span id="cloudSidebarStatus" style="float:right;font-size:10px">Setup needed</span></button>
+<div class="sidebar-label">PHONE APP</div>
+<button id="installAppBtn" class="quick-action secondary-quick" type="button">⬇ Install App</button>
 <div class="sidebar-label">QUICK ACTIONS</div>
     <button id="sidebarAddBtn" class="quick-action" type="button">＋ Add Equipment</button>
     <button id="sidebarDashboardBtn" class="quick-action secondary-quick" type="button">▦ Dashboard</button>
@@ -319,4 +328,5 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script src="cloud-sync.js"></script>
+<script src="pwa-install.js"></script>
 </body></html>

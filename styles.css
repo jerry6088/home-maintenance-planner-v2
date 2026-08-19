@@ -237,3 +237,6 @@ main{max-width:1450px;margin:0 auto;padding:24px max(22px,4vw)}
 
 .invite-box{border:1px solid var(--line);background:var(--royal-soft);border-radius:10px;padding:11px;margin:10px 0}
 .invite-box p{margin:0 0 8px}.invite-box button{background:var(--royal);color:white}
+
+@media(display-mode:standalone){body{overscroll-behavior-y:none}}
+@media(max-width:700px){body{min-height:100dvh}.app-shell{min-height:100dvh}button,input,select,textarea{font-size:16px}}
