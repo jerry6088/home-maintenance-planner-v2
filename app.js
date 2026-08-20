@@ -1146,8 +1146,8 @@ async function commitChoreCloud(reason){
    if(ok)setTimeout(()=>notice.classList.add('hidden'),2200);
  }
 }
-window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){const dates=choreCompletionDates(c);if(!dates.includes(d))dates.push(d);c.completedDate=d}else{c.completedWeek=mondayOfWeek();c.completedDate=d}recordChoreCompletion(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar();commitChoreCloud('chore-complete')};
-window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){c.completedDates=choreCompletionDates(c).filter(x=>x!==d);if(c.completedDate===d)c.completedDate=''}else{c.completedWeek='';c.completedDate=''}removeChoreCompletionRecord(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar();commitChoreCloud('chore-undo')};
+window.completeChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){const dates=choreCompletionDates(c);if(!dates.includes(d))dates.push(d);c.completedDate=d}else{c.completedWeek=mondayOfWeek();c.completedDate=d}recordChoreCompletion(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar();commitChoreCloud('chore-complete');renderKidMode()};
+window.undoChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;const d=todayISO();if(c.scheduleType==='week'){c.completedDates=choreCompletionDates(c).filter(x=>x!==d);if(c.completedDate===d)c.completedDate=''}else{c.completedWeek='';c.completedDate=''}removeChoreCompletionRecord(c,d);saveChores();renderChores();render();renderToday();if(!$('calendar').classList.contains('hidden'))renderCalendar();commitChoreCloud('chore-undo');renderKidMode()};
 window.editChore=id=>{const c=chores.find(x=>x.id===id);if(!c)return;$('choreId').value=c.id;$('choreName').value=c.name;populateAssigneeSelect('choreAssignee',c.assignee||'');$('choreScheduleType').value=c.scheduleType||'day';$('choreDay').value=c.day||'Monday';$('choreDayWrap').classList.toggle('hidden',(c.scheduleType||'day')==='week');$('choreNotes').value=c.notes||'';$('choreDialogTitle').textContent='Edit Weekly Chore';$('choreDialog').showModal()};
 
 
@@ -1688,3 +1688,29 @@ window.addEventListener('hm-cloud-status',e=>{
    n.classList.add('sync-bad');
  }
 });
+
+
+/* V49 Kid Mode */
+function kidModeActive(){return window.HM_ACCOUNT_TYPE==='child'}
+function kidDone(c){return c.scheduleType==='week'?choreDoneToday(c):choreDoneThisWeek(c)}
+function renderKidMode(){
+ const shell=document.getElementById('kidModeShell'),main=document.querySelector('.main-shell'),sidebar=document.querySelector('.sidebar');
+ if(!shell)return;
+ if(!kidModeActive()){shell.classList.add('hidden');main?.classList.remove('kid-hidden');sidebar?.classList.remove('kid-hidden');return}
+ shell.classList.remove('hidden');main?.classList.add('kid-hidden');sidebar?.classList.add('kid-hidden');
+ const profile=window.HM_SIGNED_PROFILE||currentSignedDisplayName()||'there';
+ document.getElementById('kidGreeting').textContent=`Hi ${profile}! 👋`;
+ document.getElementById('kidDate').textContent=new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});
+ const mine=todayChores().filter(c=>effectiveChoreAssignee(c)===profile).slice().sort((a,b)=>Number(kidDone(a))-Number(kidDone(b))||(a.name||'').localeCompare(b.name||''));
+ const done=mine.filter(kidDone).length,total=mine.length;
+ document.getElementById('kidProgressText').textContent=`${done} of ${total} done`;
+ document.getElementById('kidProgressBar').style.width=(total?Math.round(done/total*100):0)+'%';
+ document.getElementById('kidAllDone').classList.toggle('hidden',!(total>0&&done===total));
+ const list=document.getElementById('kidChoreList');
+ if(!total){list.innerHTML='<div class="kid-empty">😊 No chores for you today!</div>';return}
+ list.innerHTML=mine.map(c=>{const d=kidDone(c),r=choreCompletionRecord(c,c.completedDate||todayISO());return `<article class="kid-chore-card ${d?'done':''}"><div class="kid-chore-main"><div class="kid-check">${d?'✓':'○'}</div><div><h2>${esc(c.name)}</h2>${c.notes?`<p>${esc(c.notes)}</p>`:''}${d?`<small>Completed${r?.completedAt?' at '+new Date(r.completedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):''}</small>`:''}</div></div>${d?`<button class="kid-undo-btn" onclick="undoChore('${c.id}')">Undo</button>`:`<button class="kid-done-btn" onclick="completeChore('${c.id}')">✓ I DID IT</button>`}</article>`}).join('');
+}
+window.renderKidMode=renderKidMode;
+window.addEventListener('hm-account-context',()=>setTimeout(renderKidMode,0));
+window.addEventListener('hm-cloud-commit',e=>{const s=document.getElementById('kidSyncStatus');if(!s||!kidModeActive())return;s.textContent=e.detail?.ok?'Saved to family ✓':'Could not sync — try again';setTimeout(()=>{if(s)s.textContent=''},2500)});
+document.addEventListener('DOMContentLoaded',()=>{document.getElementById('kidAccountBtn')?.addEventListener('click',()=>document.getElementById('cloudBtn')?.click());setTimeout(renderKidMode,500)});

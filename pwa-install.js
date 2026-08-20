@@ -1,6 +1,6 @@
 
 (() => {
-  const VERSION='48';
+  const VERSION='49';
   let installPrompt=null;
   let waitingWorker=null;
 

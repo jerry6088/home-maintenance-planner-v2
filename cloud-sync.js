@@ -94,7 +94,7 @@
 
   async function listMemberships(){
     const {data,error}=await sb.from('household_members')
-      .select('household_id,user_id,display_name,profile_name,role,must_change_password,created_at,households(name,invite_code)')
+      .select('household_id,user_id,display_name,profile_name,role,account_type,must_change_password,created_at,households(name,invite_code)')
       .order('created_at',{ascending:true});
     if(error)throw error;
     return data||[];
@@ -336,6 +336,7 @@
     const email=($c('newAccountEmail')?.value||'').trim();
     const password=($c('newAccountPassword')?.value||'').trim();
     const profileName=($c('newAccountProfile')?.value||'').trim();
+    const accountType=($c('newAccountType')?.value||'adult');
     const result=$c('familyAccountResult');
     if(!profileName||!email||password.length<8){
       if(result)result.textContent='Choose a family member, enter an email, and use a password with at least 8 characters.';
@@ -346,7 +347,7 @@
     if(result)result.textContent='Creating account…';
     try{
       const {data,error}=await sb.functions.invoke('create-family-account',{
-        body:{household_id:householdId,email,password,profile_name:profileName}
+        body:{household_id:householdId,email,password,profile_name:profileName,account_type:accountType}
       });
       if(error)throw error;
       if(data?.error)throw new Error(data.error);
@@ -433,6 +434,11 @@
     }
   }
 
+  async function saveMemberAccountType(userId,accountType){
+    const {error}=await sb.rpc('set_household_member_account_type',{p_household_id:householdId,p_user_id:userId,p_account_type:accountType});
+    if(error){alert(error.message||String(error));return false} await renderFamilyProfiles(); await refreshCloudUI(); return true;
+  }
+
   async function renderFamilyProfiles(){
     const list=$c('familyProfilesList');
     if(!list||!sb||!householdId)return;
@@ -471,6 +477,7 @@
           ${canEdit
             ? `<select class="family-profile-select" data-profile-user="${m.user_id}">${profileOptions(selected)}</select>`
             : `<span class="family-profile-linked">${selected||'Not linked'}</span>`}
+          ${owner?`<select class="family-account-type-select" data-type-user="${m.user_id}"><option value="adult" ${(m.account_type||'adult')==='adult'?'selected':''}>Adult</option><option value="child" ${m.account_type==='child'?'selected':''}>Child / Kid Mode</option></select>`:''}
           ${owner&&!isMe?`<button type="button" class="secondary reset-family-password-btn" data-reset-user="${m.user_id}" data-reset-profile="${selected||label}">Reset Password</button>`:''}
         </div>
       </div>`;
@@ -487,6 +494,7 @@
     list.querySelectorAll('.reset-family-password-btn').forEach(btn=>{
       btn.addEventListener('click',()=>resetFamilyPassword(btn.dataset.resetUser,btn.dataset.resetProfile||'Family member'));
     });
+    list.querySelectorAll('.family-account-type-select').forEach(sel=>sel.addEventListener('change',async()=>{sel.disabled=true;await saveMemberAccountType(sel.dataset.typeUser,sel.value);sel.disabled=false;}));
   }
 
 
@@ -575,6 +583,8 @@
 
     const h=chosen.households||{};
     const linkedProfile=(chosen.profile_name||chosen.display_name||'').trim();
+    window.HM_ACCOUNT_TYPE=chosen.account_type||'adult'; window.HM_MEMBER_ROLE=chosen.role||'member'; window.HM_SIGNED_PROFILE=linkedProfile;
+    try{window.dispatchEvent(new CustomEvent('hm-account-context',{detail:{accountType:window.HM_ACCOUNT_TYPE,role:window.HM_MEMBER_ROLE,profile:linkedProfile}}));}catch{}
     if(linkedProfile)originalSetItem(ACTIVE_PROFILE_KEY,linkedProfile);
     else localStorage.removeItem(ACTIVE_PROFILE_KEY);
 
